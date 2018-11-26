@@ -7,7 +7,7 @@ Develop an open-sourced globally relevant Solar Photovoltaic System design tool 
 ## User Requirements
 The following is a list of features and/or attributes that the solution must satisfy.
 
-1. **no cost** – the model must be developed utilizing free resources, openly available to all students and faculty of Messiah College and the Collaboratory without licensing or usage fees/charges.
+1. **no cost** – the model must be developed utilizing free resources, openly available to all without licensing or usage fees/charges.
 
 2. **platform independence** – the model must be capable of operation from any modern computer platform to include: Windows, Mac, and Linux
 
