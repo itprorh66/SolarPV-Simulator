@@ -32,7 +32,7 @@ Installation of this Project is provided through **TBD**
 # Sources
 This project utilizes the development efforts of the following projects:
 
-1. **PV_LIB** - at **TBD**
+1. **pvlib-python** - a set of documented functions for simulating the performance of a photovoltaic system located  @https://github.com/pvlib/pvlib-python
 2. **NASA POWER** - NASA **P**rediction **o**f **W**orldwide **E**nergy **R**esources @ https://power.larc.nasa.gov/
 
 
