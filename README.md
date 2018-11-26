@@ -33,7 +33,7 @@ Installation of this Project is provided through **TBD**
 This project utilizes the development efforts of the following projects:
 
 1. **PV_LIB** - at **TBD**
-2. **NASA POWER** NASA **P**rediction **o**f **W**orldwide **E**nergy **R**esources @ https://power.larc.nasa.gov/
+2. **NASA POWER** - NASA **P**rediction **o**f **W**orldwide **E**nergy **R**esources @ https://power.larc.nasa.gov/
 
 
 
