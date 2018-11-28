@@ -1,0 +1,36 @@
+Overview Report for Project LLM Example
+
+	Description: 
+		Client: Messiah Collabrartory	City: Olkalou	Country: Kenya
+		Lat: -0.2739,	Lon: 36.3765,	Elev: 2178.98
+
+	User Load Description
+		Daily Load = 16.20625 KWatts	 Peak Hourly Load = 1.67875 KWatts
+
+	Battery Specification
+		MFG: Outback,	 Model: EnergyCell 200PLC
+		Description: Example Battery
+		Type: FLA, 	Vnom: 12.0 volts, 	Internal Resistance: 2.5 Ohms
+		Rated Capacity: 200.0 Amp-Hrs,	Hour Basis for Rating: 100 Hrs
+		Rated temperature: 25.0 C,	Temp Coeficient: 0.0/C
+		Max No. of Discharge Cycles: 3000,	Depth of Discharge for Lifecycle: 50.0%
+
+	Bank Specification
+		DOA: 1, 	DOD: 45.0%
+		Units in Series: 4, 	Strings in Parallel: 6
+
+	Solar Panel Specification
+		MFG: Mitsubishi Electric,	 Model: PV-MJU240GB
+		Description: Mitsubishi Electric PV-MJU240GB
+		Type: Mono-c-Si, 	V(mp): 29.8 volts, 	I(mp): 8.07 Amps
+
+	Solar Array Specification
+		Tilt: 60.0 Degrees, 	Azimuth: 220.0 Degrees
+		Mounting Config: roof_mount_cell_glassback
+		Space under Panel: 0.0 cm, 	Mounting Height: 0.0 m
+		Ground Surface Condition: Red Tiles
+		Units in Series: 3, 	Strings in Parallel: 10
+
+	Inverter Specification
+		MFG: OutBack Power Technologies Inc,	 Model: GS4048A [240V] [SI1] 240V [CEC 2018]
+		Description: OutBack Power Technologies Inc : GS4048A [240V] [SI1] 240V [CEC 2018]

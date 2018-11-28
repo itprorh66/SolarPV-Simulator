@@ -1,0 +1,36 @@
+Overview Report for Project Sample Project
+
+	Description: 
+		Client: Collabratory	City: Buhawayo	Country: Zimbabwe
+		Lat: -19.2381,	Lon: 28.7601,	Elev: 1217.47
+
+	User Load Description
+		Daily Load = 16.20625 KWatts	 Peak Hourly Load = 1.67875 KWatts
+
+	Battery Specification
+		MFG: Outback,	 Model: 1300RE
+		Description: Outback Power Energy Cell 1300RE
+		Type: AGM, 	Vnom: 24.0 volts, 	Internal Resistance: 11.0 Ohms
+		Rated Capacity: 1148.0 Amp-Hrs,	Hour Basis for Rating: 100 Hrs
+		Rated temperature: 25.0 C,	Temp Coeficient: 0.0/C
+		Max No. of Discharge Cycles: 1000,	Depth of Discharge for Lifecycle: 50.0%
+
+	Bank Specification
+		DOA: 2, 	DOD: 65.0%
+		Units in Series: 2, 	Strings in Parallel: 1
+
+	Solar Panel Specification
+		MFG: Mitsubishi Electric,	 Model: PV-MJU240GB
+		Description: Mitsubishi Electric PV-MJU240GB
+		Type: Mono-c-Si, 	V(mp): 29.8 volts, 	I(mp): 8.07 Amps
+
+	Solar Array Specification
+		Tilt: 60.0 Degrees, 	Azimuth: 220.0 Degrees
+		Mounting Config: roof_mount_cell_glassback
+		Space under Panel: 0.0 cm, 	Mounting Height: 3.0 m
+		Ground Surface Condition: Galvanized Steel (Dirty)
+		Units in Series: 4, 	Strings in Parallel: 8
+
+	Inverter Specification
+		MFG: OutBack Power Technologies Inc,	 Model: GS4048A [240V] [SI1] 240V [CEC 2018]
+		Description: OutBack Power Technologies Inc : GS4048A [240V] [SI1] 240V [CEC 2018]
