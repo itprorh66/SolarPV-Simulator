@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sun Sep 30 11:10:12 2018
+Modified on 11/27/2018 to clean up comments
 
 @author: Bob Hentz
 
