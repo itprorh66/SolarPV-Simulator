@@ -1,7 +1,7 @@
 # SolarPV-Simulator
 A Python 3 Project to model the operation of an off grid Solar Power System in order to define correct sizing information.
 For purposes of this application, the Solar PV System is conceptually depicted in "Solar PV System Overview."
-![alt text](https://github.com/itprorh66/SolarPV-Simulator/blob/master/SolarPV%20System%20Overview.jpg "Solar PV System Overview")
+![alt text](https://github.com/itprorh66/SolarPV-Simulator/blob/master/Images/SolarPV%20System%20Overview.jpg "Solar PV System Overview")
 
 ## Project Objective
 Develop an open-sourced globally relevant Solar Photovoltaic System design tool that accurately simulates Solar PV system performance based on realistic, industry approved component models, analytical equations, and localized solar irradiance estimates, weather conditions, panel position and angle, load variability, as well as grid interconnectivity.  Using the tool, will allow the design of a complete solar PV system.  The tool should yield a solar PV system design that has a high degree of confidence of being able to satisfy client needs under real-world conditions experienced at the installation site.
