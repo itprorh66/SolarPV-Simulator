@@ -2,16 +2,13 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri May 11 09:37:49 2018
-
+Modified on 11/27/2018 to clean up comments
 @author: Bob Hentz
-
 -------------------------------------------------------------------------------
   Name:        PVUtilities.py
   Purpose:     Define utilities found useful in building PV System Simulator               
-
   Copyright:   (c) Bob Hentz 2018
   License:     GNU General Public License, version 3 (GPL-3.0)
-
                This program is distributed WITHOUT ANY WARRANTY;
                without even the implied warranty of MERCHANTABILITY
                or FITNESS FOR A PARTICULAR PURPOSE.
@@ -28,7 +25,7 @@ import requests
 import csv
 from urllib.request import urlopen
 from pvlib.irradiance import total_irrad
-#from Battery_Model import *
+
 
 def dfcell_is_empty(cell_value):
     """ Return True if Dataframe cell contains NaN """
@@ -47,6 +44,7 @@ def eval_dfcell(cell_value):
     return cell_value
 
 def convert_string_to_hrs(info):
+    """ Returns the Hour component of a time string """
     st = info.find('T')+1
     tlist = info[st:].split(':')
     h = 0.0
@@ -56,6 +54,7 @@ def convert_string_to_hrs(info):
     return h
 
 def convert_to_dec_hrs(time):    
+    """ Returns the decimal Hour for a time string of form HH:MM:SS.xxx """
     h= time.hour*1.0
     h += time.minute/60.0
     h += time.second/3600.0
@@ -102,14 +101,13 @@ def hourly_load(times, load):
     lngth = len(times)
     hlc = np.zeros(lngth)
     for i in range(lngth):
-        hlc[i] = load[i%24]
-    
+        hlc[i] = load[i%24]    
     return hlc
 
 def create_time_mask(time_val, adjust=None):
-    """ Create an list of time increments from the Pandas Timestamp defined by
+    """ Create a Pandas Timestamp defined by
         time_val, Adjust to nearest hour beased on value of adjust.
-        returns [Year, Month, Day, Hour """
+    """
     strMask= '{0}-{1:02}-{2:02} {3:02}:00:00{4:+03}'
     rslt = [time_val.year, time_val.month, 
             time_val.day, time_val.hour, 
@@ -123,7 +121,6 @@ def create_time_mask(time_val, adjust=None):
             if mn < 30:
                 rslt[3] -= 1
     rstr = strMask.format(rslt[0], rslt[1], rslt[2], rslt[3], rslt[4])
-#    return pd.to_datetime(rstr, format= "%Y-%m-%d %H:%M:%S%z")
     return pd.to_datetime(rstr)                
         
         
@@ -221,6 +218,7 @@ def build_monthly_performance_info(df, parm):
     return df
    
 def find_worst_day(df):
+    """ return the worst performance day from the timestamp indexed dataframe """
     min_power = np.min(np.array(df['Worst Power']))
     minP_day = df[df['Worst Power'] == min_power]
     dom = minP_day['Worst Day'].values[0].astype(int)
@@ -229,6 +227,7 @@ def find_worst_day(df):
     
 
 def find_best_day(df):
+    """ return the best performance day from the timestamp indexed dataframe """
     max_power = np.max(np.array(df['Best Power']))
     maxP_day = df[df['Best Power'] == max_power]
     dom = maxP_day['Best Day'].values[0].astype(int)
@@ -403,11 +402,10 @@ def import_new_resource(file_type ):
         df = process_inverters_csv(dpi)
         df.to_csv(os.path.join(dpo, 'CEC Inverters.csv'))
     
-
-
   
 def main():
     pass
 
 if __name__ == '__main__':
     main()    
+© 2018 GitHub, Inc.
