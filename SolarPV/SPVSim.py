@@ -2,9 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Jul  9 19:25:00 2018
-
+Modified on 11/27/2018 to Clean up comments
 @author: Bob Hentz
-
 -------------------------------------------------------------------------------
   Name:        SPVSim.py
   Purpose:     Implement the GUI Features & logic required to implement the
@@ -12,7 +11,6 @@ Created on Mon Jul  9 19:25:00 2018
      
   Copyright:   (c) Bob Hentz 2018
   License:     GNU General Public License, version 3 (GPL-3.0)
-
               This program is distributed WITHOUT ANY WARRANTY;
               without even the implied warranty of MERCHANTABILITY
               or FITNESS FOR A PARTICULAR PURPOSE.
@@ -106,7 +104,6 @@ class SPVSIM():
                                                                 self.bnk.show_bank_soc)
                                                ]}
                                                 ],
-#                                       ('System Performance', self.dummy)],
                             'Report':[('System Description', 
                                        self.create_overview_report),
                                       ('Site Load', self.print_load)]}        
@@ -232,7 +229,7 @@ class SPVSIM():
                 ms = 'System Design provides Power to Load {0:.2f}% of the time'.format(k)
                 if k < 100:
                     ms += '\n\tDesign fails to deliver required load {0} hours out of {1} hours per year'.format(len(nosrvc), len(srvc))
-                ms += '\n\tAnnual Battery Charging Cycles = {0:.2f} out of {1} lifetime cycles'.format(self.bnk.tot_cycles, 
+                ms += '\n\tAnnual Battery Charging Cycles = {0:.2f} out of {1} specified lifetime cycles'.format(self.bnk.tot_cycles, 
                                                            self.bnk.max_dischg_cycles)
                 self.stw.show_message(ms)
             if self.debug:
@@ -417,11 +414,6 @@ class SPVSIM():
             dp = tbf.plot_graphic(self.rdw, 'Time of Day', 'Watts', xlabels, 
                                   pltslist, 'Worst Day Array Output', (6,4))
             
-    #TODO Remve when no more stiubs are required
-    def dummy(self):
-        """ Spur for all undefined Menu action methods """
-        pass
-
         
 def main():
     """ Starts the GUI and enables processing all functions """
