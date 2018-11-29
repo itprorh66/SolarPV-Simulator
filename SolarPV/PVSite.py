@@ -2,17 +2,14 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sun Sep 30 11:10:12 2018
-
+Modified on 11/27/2018 to clean up comments
 @author: Bob Hentz
-
 -------------------------------------------------------------------------------
   Name:        PVSite.py
   Purpose:     Provides for the methods & data structures associated with
                Implementing the Battery of a Solar PV System
-
   Copyright:   (c) Bob Hentz 2018
   License:     GNU General Public License, version 3 (GPL-3.0)
-
                This program is distributed WITHOUT ANY WARRANTY;
                without even the implied warranty of MERCHANTABILITY
                or FITNESS FOR A PARTICULAR PURPOSE.
@@ -119,6 +116,7 @@ class PVSite(Component):
             return True
         return False
 
+#TODO Implement retrieve elevation data functionality when focusin and elev cell is 0.0
     def retrieve_elevation(self, lat, lon):
         elvdat =  popup_notification(self.form, 
                         'Retrieving Elevation Data, Please wait', 
@@ -165,7 +163,6 @@ class PVSite(Component):
             self.get_atmospherics(times, stat_win)
         return self.wind_spd
 
-    #TODO Don't use this routine, not yet debugged
     def get_sun_times(self, times):
         """ Create a DataFrame with SunRise & Sunset Times for each
             of the 365 days in a year   """           
@@ -235,17 +232,13 @@ class PVSite(Component):
 
 
 
-#TODO Implement retrieve elevation data functionality when focusin and elev cell is 0.0
+
 class SiteForm(DataForm):
     def __init__(self, parent_frame, data_src, **kargs):
         DataForm.__init__(self, parent_frame, data_src, **kargs)
 
     def define_layout(self):
         self.wdg_dict = {
-#                'header': self.create_text(row= 0, column= 6, 
-#                                           text= "Project Definition Form",
-#                                           justify= CENTER, columnspan= 10,
-#                                           sticky= (EW)),
                 'blank1': self.create_space(40, row= 1, column= 0, sticky=(EW),
                                            columnspan= 10),               
                 'lbl_proj':self.create_label(self.src.get_attrb('proj'),
