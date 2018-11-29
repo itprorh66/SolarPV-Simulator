@@ -1,6 +1,6 @@
 # SolarPV-Simulator
 A Python 3 Project to model the operation of an off grid Solar Power System in order to define correct sizing information.
-For purposes of this application, the Solar PV System is conceptually depicted in "Figure 1, Solar PV System Overview."
+For purposes of this application, the Solar PV System is conceptually depicted in "Solar PV System Overview."
 ![alt text](https://github.com/itprorh66/SolarPV-Simulator/blob/master/SolarPV%20System%20Overview.jpg "Solar PV System Overview")
 
 ## Project Objective
