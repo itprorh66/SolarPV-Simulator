@@ -2,18 +2,15 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jun  8 14:42:27 2018
-
+Modified on 11/27/2018 to Clean up Comments
 @author: Bob Hentz
-
 -------------------------------------------------------------------------------
   Name:        SPVSwbDisplay.py
   Purpose:     Provide a Switchboard Menu to allow interactive update of the
                Project Definition data (Summary, Load, Batteries, Panels, & 
                Inverters)               
-
   Copyright:   (c) Bob Hentz 2018
   License:     GNU General Public License, version 3 (GPL-3.0)
-
               This program is distributed WITHOUT ANY WARRANTY;
               without even the implied warranty of MERCHANTABILITY
               or FITNESS FOR A PARTICULAR PURPOSE.
@@ -23,11 +20,7 @@ Created on Fri Jun  8 14:42:27 2018
 from tkinter import *
 import tkinter.ttk as ttk
 import guiFrames as tbf
-#import PVFrames as pvf
 import SiteLoadDisplay as sld
-#from Runsim import initiate_sim
-#from ProjectSumDisplay import *
-#from SiteLoadDisplay import *
 
 class spvSwitchboard(tbf.switchboard):
     """  Methods to implement Switchboard """
@@ -93,8 +86,6 @@ class spvSwitchboard(tbf.switchboard):
         """ Execute a simulation Run """
         self.src.execute_simulation()
 
-        
-
     def on_close(self):
         """ Clean up input on Input Form close"""
         self.frm.on_form_close()
@@ -120,4 +111,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    
