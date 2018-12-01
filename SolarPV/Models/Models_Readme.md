@@ -2,7 +2,7 @@
 Contains the stored model files created by the application and subsequently saved for later import
 
 # File Contents
-File maintained inn this directory are the result of picling the data contents of the SolarPV Classes:
+File maintained in this directory are the result of pickling the data contents of the SolarPV Classes:
 1. PVSite
 2. SiteLoad
 3. PVBattery
