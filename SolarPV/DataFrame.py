@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Jun  4 19:17:27 2018
+Modified   Sat Dec  1 2018 (fix save/import issue)
 
 @author: Bob Hentz
 
@@ -91,7 +92,32 @@ class DataFrame:
             return self.col_hds.index(col_hd)
         except:
             return -1
-        
+
+    def export_frame(self):
+        """ create a dict of DataFrame contents keyed to Rows
+            used to save the dataframe contents but not the class code"""
+        return self.df.to_dict('Index')
+
+    def import_frame(self, dfInput):
+        """ Rebuild  DataFrame contents from imported data"""
+
+        rws = list(dfInput.keys())
+        rws.sort()
+        for rw in rws:
+            rwDict = dfInput[rw]
+            ar = []
+            for i in range(len(self.col_hds)):
+                dfval = None
+                if self.col_typs[i] is str:
+                    dfval = ""
+                elif self.col_typs[i] is int:
+                    dfval = 0
+                else:
+                    dfval = 0.0
+                ar.append(rwDict.pop(self.col_hds[i], dfval))
+            self.add_new_row(ar)
+
+
     def __str__(self):
         """ Create printable version of Load Profile """
         rows = self.get_row_count()
@@ -105,15 +131,13 @@ class DataFrame:
                 for c in range(len(rw)-1):
                     s += '{0: >20}\t'.format(rw[c])
         return s
-            
-        
-        
+
+
+
 """ This is Main"""
-def main():  
+def main():
     pass
 
 
 if __name__ == '__main__':
     main()
-    
-    
