@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Sep 27 17:00:07 2018
+Modified   Wed Dec  5 2018 (Fix Issue 2, Handle DC Loads)
 
 @author: Bob Hentz
 
@@ -216,14 +217,15 @@ class PVBatBank(Component):
         soc = np.zeros(len(array_data))
         pwr_out = np.zeros(len(array_data))
         bnk_pwr = np.zeros(len(array_data))
-        pac_load = array_data['Load']
+#        pac_load = array_data['Load']
         paco = inverter_dict['Paco']
         pdco = inverter_dict['Pdco']
         pnt = inverter_dict['Pnt']
         for indx in range(len(array_data)):
-            pdc =estimate_required_dcPower(array_data['Load'].iloc[indx], 
+            pdc =estimate_required_dcPower(array_data['AC_Load'].iloc[indx], 
                                            paco, pdco, pnt)
-            drain = array_data['p_mp'].iloc[indx] - pdc
+            drain = (array_data['p_mp'].iloc[indx] - 
+                    (pdc + array_data['DC_Load'].iloc[indx]))
             if (drain < 0 and self.is_okay())  or drain > 0:
                 pwr_out[indx] = True
             else:

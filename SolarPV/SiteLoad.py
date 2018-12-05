@@ -3,6 +3,7 @@
 """
 Created on Wed May  2 13:15:35 2018
 Modified   Sat Dec  1 2018 (fix save/import issue)
+Modified   Wed Dec  5 2018 (Fix Issue 2, Handle DC Loads)
 
 @author: Bob Hentz
 
@@ -23,12 +24,8 @@ import numpy as np
 import pandas as pd
 import Parameters as sp
 from DataFrame import *
-import seaborn as sns
 import matplotlib.pyplot as plt
 import guiFrames as tbf
-
-#TODO  Add back the AC/DC field to Siteload,
-#TODO  update get_load_profile to create AC & DC hourly load profiles
 
 def findindex(val):
     """ If val is a Column Label return the column index
@@ -50,7 +47,7 @@ class SiteLoad(DataFrame):
 
     def addRow(self, typ, qty=None, uf=None, hrs=None, st=0, wts=None, src=None):
         """ Create a new entry in the load array from individual items """
-        ar = [typ, qty, uf, hrs, st, wts, src]
+        ar = [typ, qty, uf, hrs, st, wts, src, mde]
         self.add_new_row(ar)
 
 
@@ -73,14 +70,19 @@ class SiteLoad(DataFrame):
         return ret
 
     def get_daily_load(self):
-        return sum(self.get_load_profile())
+        return sum(self.get_load_profile()['Total'])
 
     def get_load_profile(self):
-        """ Return an array of usage by hour for the given load
-            over a typical 25 hour period """
-        rslt = [0.0]*24
+        """ Return a Dataframe of hourly usage by AC, DC and Total Power
+            for the given load over a 24 hour period """
+        ac_rslt = [0.0]*24
+        dc_rslt = [0.0]*24
+        tl_rslt = [0.0]*24
         for dfrw in range(self.get_row_count()):
+            ac_mode = True
             ldvals = self.get_row_by_index(dfrw)
+            if ldvals[sp.load_fields.index('Mode')] == 'DC':
+                ac_mode = False            
             hr_wts = (ldvals[sp.load_fields.index('Qty')] *
                       ldvals[sp.load_fields.index('Use Factor')] *
                       ldvals[sp.load_fields.index('Watts')] )
@@ -94,31 +96,42 @@ class SiteLoad(DataFrame):
             for h in range(24):
                 if et < 24:
                     if h >= st and h < et:
-                        rslt[h] += hr_wts
+                        if ac_mode:
+                            ac_rslt[h] += hr_wts
+                        else:
+                            dc_rslt[h] += hr_wts
                 else:
                     if h >= st or h + 24 < et:
-                        rslt[h] += hr_wts
-        return np.array(rslt)
+                        if ac_mode:
+                            ac_rslt[h] += hr_wts
+                        else:
+                            dc_rslt[h] += hr_wts
+        for i in range(24):
+            tl_rslt[i] = ac_rslt[i] + dc_rslt[i]
+        return pd.DataFrame({'AC': ac_rslt, 'DC': dc_rslt, 'Total':tl_rslt})
 
     def show_load_profile(self, window):
         """ Build & display the load profile graphic """
         elp = self.get_load_profile()
-        pl = 'Peak Hourly Load = {0:.2f} KW'.format(max(elp)/1000)
-        tdl = 'Total Daily Load = {0:.2f} KW'.format(sum(elp)/1000)
-        mp = 0
-        ypos = max(elp)
-        while ypos > 10:
-            mp += 1
-            ypos = ypos//10
-        adj = 10**(mp-1)
-        pltlist = [{'label': 'Load', 'data': np.array(elp),
+        pls = 'Peak Hourly Load KW: Total= {0:4.2f},\tAC= {1:4.2f},\tDC= {2:4.2f}'
+        pl = pls.format(max(elp['Total'])/1000, (max(elp['AC']))/1000, 
+                        (max(elp['DC']))/1000)
+        tdls = 'Daily Load KW: Total= {0:4.2f},\tAC= {1:4.2f},\tDC= {2:4.2f}'
+        tdl = tdls.format(sum(elp['Total'])/1000, sum(elp['AC'])/1000, 
+                          sum(elp['DC'])/1000)
+#        mp = 0
+#        ypos = max(elp['Total'])
+#        while ypos > 10:
+#            mp += 1
+#            ypos = ypos//10
+#        adj = 10**(mp-1)
+        pltlist = [{'label': 'Load', 'data': np.array(elp['Total']),
                         'type': 'Bar', 'color': 'grey', 'width': 0.4,
                         'xaxis':np.array([x for x in range(24)])}]
         dp = tbf.plot_graphic(window, 'Hour of Day', 'Watts',
                               np.array([x for x in range(24)]),
                     pltlist,'Hourly Electrical Use Profile', (6,4),
-                    text_inserts= ['Peak Hourly Load = {0:.2f} KW'.format(max(elp)/1000),
-                                   'Total Daily Load = {0:.2f} KW'.format(sum(elp)/1000)])
+                    text_inserts= [pl,tdl])
 
 
     def report_error(self, msg, level, error_class):
@@ -133,7 +146,7 @@ class SiteLoad(DataFrame):
 
     def check_arg_definition(self):
         elp = self.get_load_profile()
-        if sum(elp) == 0.0:
+        if sum(elp['Total']) == 0.0:
             return False, 'Electrical Load is unspecified'
         return True, ""
 
@@ -147,30 +160,22 @@ class SiteLoad(DataFrame):
         return rslt
 
 def main():
-    alt_load_fields = ['Type', 'Qty', 'Use Factor','Hours', 'Start Hour', 'Watts', 'Mode']
-    alt_load_field_types = [str, int, float, float, int, float, str]
-    sl = SiteLoad(sp.load_fields, sp.load_field_types)
-    sl2 = SiteLoad(alt_load_fields, alt_load_field_types)
-    sl.add_new_row(['Light, LED', 15, 1.0, "", "", 5.0])
-#    sl.add_new_row(['Light, LED', 8, 0.85, 2, 6, 5.0])
-#    sl2.add_new_row(['Light, Halogen', 10, 0.95, 5, 18, 35.0])
-#    sl.add_new_row(['Computer, Desktop', 10, 0.95, 12, 8, 175.0])
-    sl.add_new_row(['Phone Charger', 10, 0.45, 12, 6, 2.0])
+    sl = SiteLoad()
+    sl.add_new_row(['Light, LED', 15, 0.30, "", "", 5.0, 'AC'])
+    sl.add_new_row(['Light, LED', 8, 0.85, 2, 6, 5.0, 'AC'])
+    sl.add_new_row(['Light, Halogen', 10, 0.95, 5, 18, 35.0, 'AC'])
+    sl.add_new_row(['Well Pump DC, 1 HP', 1, 0.35, 12, 8, 500.0, 'DC'])
+    sl.add_new_row(['Phone Charger', 10, 0.45, 12, 6, 2.0, 'DC'])
 #    sl.add_new_row(['Refrigerator', 2, 0.25, 24, 0 , 200.0])
 #    sl2.add_new_row(['TV', 3, 0.9, 5, 16, 100.0])
 #    sl.add_new_row(['Well Pump', 1, 0.3, 24, 0, 300.0])
 #    sl.add_new_row(['Stereo', 2, 0.25, 6, 14, 35.0])
-#    elp = sl.get_load_profile()
-#    print (elp, sl.get_daily_load())
+    elp = sl.get_load_profile()
 #        ld = pd.DataFrame(elp, columns=['Load'])
 #        ld.plot( kind= 'Bar', title= 'Watts per Daily Hour', legend= False)
 #        plt.show
 
     print(sl.get_dataframe())
-    exDf = sl.export_frame()
-    sl2.import_frame(exDf)
-    print()
-    print(sl2.get_dataframe())
 
 
 if __name__ == '__main__':

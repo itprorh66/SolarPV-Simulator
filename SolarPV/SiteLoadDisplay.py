@@ -180,8 +180,8 @@ class Table(ttk.Frame):
 
 def main():
     sl = SiteLoad()
-#    sl.add_new_row(['Light, LED', 12, 0.6, 6, 17, 5.0, 'AC'])
-    sl.add_new_row(['Light, LED', 12, 0.6, 6, 17, 5.0])
+    sl.add_new_row(['Light, LED', 12, 0.6, 6, 17, 5.0, 'AC'])
+
 
     print ('Starting Display')
     print (sl.get_dataframe())

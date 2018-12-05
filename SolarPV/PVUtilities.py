@@ -3,6 +3,8 @@
 """
 Created on Fri May 11 09:37:49 2018
 Modified on 11/27/2018 to clean up comments
+Modified   Wed Dec  5 2018 (Fix Issue 2, Handle DC Loads)
+
 @author: Bob Hentz
 -------------------------------------------------------------------------------
   Name:        PVUtilities.py
@@ -99,10 +101,13 @@ def dom_timestamp(ts):
 def hourly_load(times, load):
     """ Create a Data Frame of Hourly Load in Watts"""
     lngth = len(times)
-    hlc = np.zeros(lngth)
+    hlc = np.zeros((lngth, 3))
     for i in range(lngth):
-        hlc[i] = load[i%24]    
-    return hlc
+        hlc[i, 0] = load['AC'].iloc[i%24]
+        hlc[i, 1] = load['DC'].iloc[i%24]
+        hlc[i, 2] = load['Total'].iloc[i%24]
+    return pd.DataFrame(data=hlc, index=times, 
+                        columns=['AC_Load', 'DC_Load', 'Total_Load'])
 
 def create_time_mask(time_val, adjust=None):
     """ Create a Pandas Timestamp defined by

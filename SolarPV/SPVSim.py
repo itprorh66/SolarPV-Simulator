@@ -223,7 +223,8 @@ class SPVSIM():
             self.array_out = self.array_out.assign(Month= self.months,
                                              DayofMonth= self.days_of_month,
                                          DayofYear= self.days_of_year)
-            self.array_out =self.array_out.assign(Load = hourly_load(self.times,
+
+            self.array_out =self.array_out.join(hourly_load(self.times,
                                         self.load.get_load_profile()))
             self.build_monthly_performance(self.site.read_attrb('tz'))
             if self.stw is not None:
@@ -329,6 +330,7 @@ class SPVSIM():
         self.best_day = [bds, bde]
 
 
+
     #TODO in Print Load improve formatting control for better tabular results
     def print_load(self):
         """ Method to build a print the load profile  """
@@ -399,7 +401,7 @@ class SPVSIM():
                          'type': 'Line', 'xaxis': xlabels,
                          'width': 2.0, 'color': 'b'},
                 {'label': 'Hourly Load',
-                         'data': self.best_day_perform['Load'],
+                         'data': self.best_day_perform['Total_Load'],
                          'type': 'Line', 'xaxis': xlabels ,
                          'width': 2.0, 'color': 'r'}]
             dp = tbf.plot_graphic(self.rdw, 'Time of Day', 'Watts', xlabels,
@@ -416,7 +418,7 @@ class SPVSIM():
                          'type': 'Line', 'xaxis': xlabels,
                          'width': 2.0, 'color': 'b'},
                 {'label': 'Hourly Load',
-                         'data': self.worst_day_perform['Load'],
+                         'data': self.worst_day_perform['Total_Load'],
                          'type': 'Line', 'xaxis': xlabels ,
                          'width': 2.0, 'color': 'r'}]
             dp = tbf.plot_graphic(self.rdw, 'Time of Day', 'Watts', xlabels,

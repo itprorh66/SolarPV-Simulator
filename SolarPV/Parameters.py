@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed May  2 13:57:09 2018
+Modified   Wed Dec  5 2018 - Update for Issue #2 DC loads
 
 @author: Bob Hentz
 
 
 -------------------------------------------------------------------------------
   Name:        Parameters.py
-  Purpose:     Declare Standardized System Parameters              
+  Purpose:     Declare Standardized System Parameters
 
   Copyright:   (c) Bob Hentz 2018
   License:     GNU General Public License, version 3 (GPL-3.0)
@@ -19,10 +20,10 @@ Created on Wed May  2 13:57:09 2018
  -------------------------------------------------------------------------------
 """
 #Declare Energy Load Table Column Headings
-load_fields = ['Type', 'Qty', 'Use Factor','Hours', 'Start Hour', 'Watts']
+load_fields = ['Type', 'Qty', 'Use Factor','Hours', 'Start Hour', 'Watts', 'Mode']
 
 # Declare Energy Load Table Field Types by Column
-load_field_types = [str, int, float, float, int, float] 
+load_field_types = [str, int, float, float, int, float, str]
 
 """
 # Declare Energy Load Types and Operating Parameters
@@ -30,24 +31,26 @@ load_field_types = [str, int, float, float, int, float]
 # load_types = {namestring:{'Watts':Float }}
 # this structure allows for future addition of other types
 """
-load_types = {'Light, LED':{'Watts':5.0}, 
-              'Light, Incadecent':{'Watts':65.0}, 
-              'Light, Compact Flourescent':{'Watts':20.0},
-              'Light, Flourescent':{'Watts':20.0},
-              'Computer, Laptop':{'Watts':25.0},
-              'Computer, Desktop':{'Watts':175.0},
-              'Light, Halogen':{'Watts':35.0},
-              'Refrigerator, 18 cf':{'Watts':125.0},
-              'Refrigerator, 18 cf Std':{'Watts':200.0},
-              'Freezer, 10 cu. Ft.':{'Watts':150.0},
-              'TV LCD':{'Watts':25.0},
-              'TV Regular':{'Watts':100.0},
-              'Stereo':{'Watts':35.0},
-              'Printer':{'Watts':30.0},
-              'Phone Charger':{'Watts':2.0},
-              'Well Pump, 1/2 HP':{'Watts':700.0},
-              'Well Pump, 1 HP':{'Watts':1500.0},
-              'Well Pump, 2 HP':{'Watts':3000.0}
+load_types = {'Light, LED':{'Watts':5.0, 'Mode': "AC"},
+              'Light, Incadecent':{'Watts':65.0, 'Mode': "AC"},
+              'Light, Compact Flourescent':{'Watts':20.0, 'Mode': "AC"},
+              'Light, Flourescent':{'Watts':20.0, 'Mode': "AC"},
+              'Computer, Laptop':{'Watts':25.0, 'Mode': "AC"},
+              'Computer, Desktop':{'Watts':175.0, 'Mode': "AC"},
+              'Light, Halogen':{'Watts':35.0, 'Mode': "AC"},
+              'Refrigerator, 18 cf':{'Watts':125.0, 'Mode': "AC"},
+              'Refrigerator, 18 cf Std':{'Watts':200.0, 'Mode': "AC"},
+              'Freezer, 10 cu. Ft.':{'Watts':150.0, 'Mode': "AC"},
+              'TV LCD':{'Watts':25.0, 'Mode': "AC"},
+              'TV Regular':{'Watts':100.0, 'Mode': "AC"},
+              'Stereo':{'Watts':35.0, 'Mode': "AC"},
+              'Printer':{'Watts':30.0, 'Mode': "AC"},
+              'Phone Charger':{'Watts':2.0, 'Mode': "AC"},
+              'Well Pump AC, 1/2 HP':{'Watts':700.0, 'Mode': "AC"},
+              'Well Pump AC, 1 HP':{'Watts':1500.0, 'Mode': "AC"},
+              'Well Pump AC, 2 HP':{'Watts':3000.0, 'Mode': "AC"},
+              'Refrigerator, DC 18cf':{'Watts': 40, 'Mode':'DC'},
+              'Well Pump DC, 1 HP':{'Watts':500.0, 'Mode': "DC"},
               }
 
 # Define the Albedo factor for Site surface conditions
@@ -83,14 +86,14 @@ panel_types = {'Si':{'Descrpt':'Silicon','EgRef': 1.121, 'dEgdT': -0.0002677, 'M
                '2-a-Si':{'Descrpt':'Silicon','EgRef': 1.121, 'dEgdT': -0.0002677, 'M': [-1.26E-4, 2.816E-3, -0.024459, 0.086257, 0.918093]},
                '3-a-Si':{'Descrpt':'Silicon','EgRef': 1.121, 'dEgdT': -0.0002677, 'M': [-1.26E-4, 2.816E-3, -0.024459, 0.086257, 0.918093]},
                'a-Si':{'Descrpt':'Silicon','EgRef': 1.121, 'dEgdT': -0.0002677, 'M': [-1.26E-4, 2.816E-3, -0.024459, 0.086257, 0.918093]},
-               'a-Si/nc':{'Descrpt':'Silicon','EgRef': 1.121, 'dEgdT': -0.0002677, 'M': [-1.26E-4, 2.816E-3, -0.024459, 0.086257, 0.918093]}              
+               'a-Si/nc':{'Descrpt':'Silicon','EgRef': 1.121, 'dEgdT': -0.0002677, 'M': [-1.26E-4, 2.816E-3, -0.024459, 0.086257, 0.918093]}
                }
 
 # PVLIB standard descriptions (open_rack_glassback is default)
-panel_racking = ['open_rack_cell_glassback', 
-                 'roof_mount_cell_glassback', 
-                 'open_rack_cell_polymerback', 
-                 'insulated_back_polymerback', 
+panel_racking = ['open_rack_cell_glassback',
+                 'roof_mount_cell_glassback',
+                 'open_rack_cell_polymerback',
+                 'insulated_back_polymerback',
                  'open_rack_polymer_thinfilm_steel']
 
 # Define battery efficiency factors based on type
@@ -103,9 +106,9 @@ battery_types = {'FLA':('Flooded Lead Acid', 0.90),
 
 
 def main():
-	pass   
+	pass
 
-    
-        
+
+
 if __name__ == '__main__':
     main()
