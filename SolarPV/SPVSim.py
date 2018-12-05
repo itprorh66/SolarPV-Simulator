@@ -4,6 +4,7 @@
 Created on Mon Jul  9 19:25:00 2018
 Modified on 11/27/2018 to Clean up comments
 Modified on 12/01/2018 to resolve Save/Import Issue #1
+Modified 0n 12/04/2018 to resolve Import Load Error - Issue #11
 
 @author: Bob Hentz
 -------------------------------------------------------------------------------
@@ -164,6 +165,7 @@ class SPVSIM():
         self.site.atmospherics = dd.pop('atoms', None)
         load_in = dd.pop('load', None)
         if load_in is not None:
+            self.load.purge_frame()
             if type(load_in) is dict:
                 self.load.import_frame(load_in)
             # This test is for backwards compatability

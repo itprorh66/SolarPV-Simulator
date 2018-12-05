@@ -3,6 +3,7 @@
 """
 Created on Mon Jun  4 19:17:27 2018
 Modified   Sat Dec  1 2018 (fix save/import issue)
+Modified   Tue Dec  4 2018 (fix Load Import Error Issue #11)
 
 @author: Bob Hentz
 
@@ -92,6 +93,10 @@ class DataFrame:
             return self.col_hds.index(col_hd)
         except:
             return -1
+
+    def purge_frame(self):
+        """ Clear existing load definition data from the underlying DataFrame"""
+        self.df = pd.DataFrame(None, None, self.col_hds)
 
     def export_frame(self):
         """ create a dict of DataFrame contents keyed to Rows
