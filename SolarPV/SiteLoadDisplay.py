@@ -62,6 +62,7 @@ class table_combo_cell(ttk.Combobox):
         #TODO Add delete row function to Site Load Display
         # Ask if you want to delete the record
         # If yes, drop row by index number, else do nothing
+        
         pass
 
     def is_okay(self):
@@ -97,9 +98,15 @@ class table_data_cell(ttk.Entry):
         self.bind('Key-Return>', self.update)
         
     def update(self, event):
-        new_val = self.varTyp(self.evar.get())
+        try:
+            new_val = self.varTyp(self.evar.get())
+        except:
+            if self.evar.get().strip() == '':
+                new_val = 0
+            else:
+                new_val = self.evar.get()
         if new_val != self.var:
-            self.parent.update_data(self.datpos, new_val)    
+            self.parent.update_data(self.datpos, new_val) 
         
     def delete(self, event):
         pass
@@ -167,8 +174,9 @@ class Table(ttk.Frame):
             ar = self.df.setStdRowValues(ar)
             self.wa[pos[0]] = ar   
         if pos[0] == len(self.wa) -1:
-            ar = [self.wa[pos[0]][0], self.wa[pos[0]][1], self.wa[pos[0]][2], 
-                           self.wa[pos[0]][3], self.wa[pos[0]][4], self.wa[pos[0]][5]]
+            ar = []
+            for i in range(len(self.wa[pos[1]])):
+                ar.append(self.wa[pos[0]][i])
             self.df.add_new_row(ar)
             self.dsply_table()
         else:
