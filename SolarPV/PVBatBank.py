@@ -185,7 +185,7 @@ class PVBatBank(Component):
             gv = self.master.site.read_attrb('gv')
             if gv == 0.0 or gv == '':
                 gv = 120.0
-            ld = sum(self.master.load.get_load_profile())
+            ld = sum(self.master.load.get_load_profile()['Total'])
             return round((doa*ld)/(gv*doc*eff))
         
     def define_battery_drain(self, array_data, inverter_dict):
