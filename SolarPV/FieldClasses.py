@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Sep 21 12:20:27 2018
+Modified on 02/22/2019 for version 0.1.0
 
 @author: Bob Hentz
 
@@ -124,26 +125,7 @@ class option_field(data_field):
     def get_option_source(self):
         """ returns the option source """
         return self.osrc
-    
-#    def __str__(self):
-#        """ enables a output of data_field contents """
-#        lst = self.get_list()
-#        ln = len(lst)
-#        s = '{0}\t{1}'.format(self.lbl, self.dat)
-#        if self.dat == None or self.dat == "":
-#            s += '\nOptions:\n'
-#            pt = 2
-#            while pt < ln:
-#                s += '{0},  {1},  {2} \n'.format(lst[pt-2], lst[pt-1], lst[pt])
-#                pt += 3
-#            r = pt - ln
-#            if r == 0:
-#                s += '{0},  {1} \n'.format(lst[pt-2], lst[pt-1])
-#            elif r == 1:
-#                s+= '{0} \n'.format(lst[pt-2])
-#        s += '\t'
-#        return s
-    
+        
 
 class data_cell(ttk.Entry):
     """ Creates an Entry Field widget for displaying & updating a data field
@@ -174,8 +156,7 @@ class data_cell(ttk.Entry):
 
     def set_val(self):
         if self.src.get_data_type() is float:
-            self.val.set(self.src.read_data())
-#            self.val.set('{0:.4f}'.format(self.src.read_data()))            
+            self.val.set(self.src.read_data())     
         else:
             self.val.set(self.src.read_data())
         
@@ -229,11 +210,7 @@ class list_cell(ttk.Combobox):
     def set_val(self):
         """ Sets value of underlying data source """
         self.val.set(self.src.read_data())
-       
-#    def on_enter(self, event):
-#        """ executed on widget entry """
-#        self.last_val = self.get_val()
-        
+               
     def on_leave(self, event):
         """ Method to process cell content changes """
         val = self.get_val()

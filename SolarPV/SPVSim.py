@@ -5,6 +5,7 @@ Created on Mon Jul  9 19:25:00 2018
 Modified on 11/27/2018 to Clean up comments
 Modified on 12/01/2018 to resolve Save/Import Issue #1
 Modified 0n 12/04/2018 to resolve Import Load Error - Issue #11
+Modified on 02/25/2019 for version 0.1.0
 
 @author: Bob Hentz
 -------------------------------------------------------------------------------
@@ -22,7 +23,7 @@ Modified 0n 12/04/2018 to resolve Import Load Error - Issue #11
 
 from tkinter import *
 from tkinter.filedialog import *
-from datetime import date
+from datetime import date, datetime
 import os.path
 
 
@@ -40,44 +41,46 @@ from SPVSwbrd import *
 from NasaData import *
 from Parameters import panel_types
 import dateutil.parser
+from pandas.plotting import register_matplotlib_converters
 
-
-#TODO Create ArrayCombo Class to allow for implementing multiple Array configs
-#TODO Implement handling of DC Loads as well as AC loads
-#TODO Improve performance by implementing DataFrame vectored operations
 class SPVSIM():
     def __init__(self):
+        register_matplotlib_converters()
         self.debug = False
+        self.perf_rept = False
+        self.errflg = False
         self.wdir = os.getcwd()
-        self. mdldir = os.path.join(self.wdir, 'Models')
+        self.mdldir = os.path.join(self.wdir, 'Models')
         self.rscdir = os.path.join(self.wdir, 'Resources')
         self.rptdir = os.path.join(self.wdir, 'Reports')
         self.countries = read_resource('Countries.csv', self.rscdir)
         self.modules = read_resource('CEC Modules.csv', self.rscdir)
         self.inverters = read_resource('CEC Inverters.csv', self.rscdir)
-        self.sdw = None
-        self.rdw = None
-        self.stw = None
+        self.sdw = None      #System Description Window
+        self.rdw = None      #Results Display Window
+        self.stw = None      #Status Reporting Window
 
+        self.array_list = list()
         self.filename = None         #Complete path to Current File
         self.site = PVSite(self)
         self.bat = PVBattery(self)
         self.pnl = PVPanel(self)
-        self.ary = PVArray(self)
+        self.ary = self.create_solar_array(self)
+        self.array_list.append(self.ary)
+        self.sec_ary = self.create_solar_array(self)
+        self.array_list.append(self.sec_ary)
         self.bnk = PVBatBank(self)
         self.bnk.uses(self.bat)
-        self.ary.uses(self.pnl)
         self.inv = PVInverter(self)
         self.load = SiteLoad(self)
+        self.chgc = PVChgControl(self)
         self.array_out = None   #The Solar Array Output by hour
         self.times = None
-        self.months = None
-        self.days_of_year = None
-        self.days_of_month = None
         self.array_out = None
-        self.batDrain = None
+        self.power_flow = None
+        self.outrec = None
+        self.outfile= None
         self.bringUpDisplay()
-
 
     def bringUpDisplay(self):
         """ Create the Display GUI """
@@ -91,7 +94,7 @@ class SPVSIM():
     def define_menuBar(self):
         """ Format the Menu bar at top of display """
         self.menuoptions = {'File':[('Save',self.save_file),
-                                    ('Save as', self.save_as),
+                                    ('Save as', self.save_file),
                                     ('Load File', self.import_file),
                                     ('Exit', self.on_app_delete)],
                             'Display':[('Daily Load', self.show_load_profile),
@@ -99,6 +102,10 @@ class SPVSIM():
                                          ('Overview', self.show_array_performance),
                                          ('Best Day', self.show_array_best_day),
                                          ('Worst Day',  self.show_array_worst_day)]},
+                                       {'Power Delivery':[
+                                               ('Performance', self.show_pwr_performance),
+                                                ('Best Day',self.show_pwr_best_day ),
+                                                ('Worst Day', self.show_pwr_worst_day )]},                    
                                        {'Battery Performance':[
                                         ('Overview', self.bnk.show_bank_overview),
                                         ('Bank Drain', self.bnk.show_bank_drain),
@@ -126,18 +133,12 @@ class SPVSIM():
         """ Method to Build Switchboard Display & Switching Logic """
         self.swb = spvSwitchboard(self, location = [0,0], parent= self.sdw,
                                   menuTitle = 'Project Details')
-
     def on_app_delete(self):
         """ User has selected Window Abort """
         if tbf.ask_question('Window Abort', 'Save Existing File?'):
             self.save_file()
         if tbf.ask_question('Exit Application', 'Exit?'):
             self.root.destroy()
-
-    def save_as(self):
-        """ Method to save existing project under new Filename """
-        self.filename = None
-        self.save_file
 
     def write_file(self, fn):
         """ Write DataDict to specified file  """
@@ -147,9 +148,11 @@ class SPVSIM():
               'bat': self.bat.args,
               'pnl': self.pnl.args,
               'ary': self.ary.args,
+              'ary_2':self.sec_ary.args,
               'bnk': self.bnk.args,
               'inv': self.inv.args,
               'load': self.load.export_frame(),
+              'chgr': self.chgc.args
               }
 
         fo = open(fn, 'wb')
@@ -178,9 +181,10 @@ class SPVSIM():
         self.bat.write_parameters(dd.pop('bat', None))
         self.pnl.write_parameters(dd.pop('pnl', None))
         self.ary.write_parameters(dd.pop('ary', None))
+        self.sec_ary.write_parameters(dd.pop('ary_2', None))
         self.bnk.write_parameters(dd.pop('bnk', None))
         self.inv.write_parameters(dd.pop('inv', None))
-
+        self.chgc.write_parameters(dd.pop('chgr', None))
 
     def import_file(self):
         """ Import Project Data File """
@@ -202,8 +206,154 @@ class SPVSIM():
                                    initialfile = self.filename,
                                    initialdir= self.mdldir)
         if fn is not '':
-            self.filename = fn
             self.write_file(fn)
+            self.filename = fn
+
+    def create_solar_array(self, src):
+        sa = PVArray(src)
+        sa.uses(self.pnl)
+        return sa
+
+    #TODO Should combine_arrays move to PVUtilities        
+    def combine_arrays(self):
+        """ Combine primary & secondary array outputs to from a unified output
+            using individual array outputs to include the following:
+                Array Voltage (AV) = mim voltage for all arrays
+                Array Current (AI) = sum (ac(i)*AV/av(i))
+                Array Power (AP) = AV * AC
+        """
+        if len(self.array_list)> 0:
+            frst_array = self.array_list[0].define_array_performance(self.times.index,
+                                            self.site, self.inv, self.stw)
+            rslt = pd.DataFrame({'ArrayVolts':frst_array['v_mp'],
+                                 'ArrayCurrent':frst_array['i_mp'],
+                                 'ArrayPower':frst_array['p_mp']},
+                                  index = self.times.index)
+            for ar in range(1, len(self.array_list)):
+                sarf  =  self.array_list[ar].is_defined()
+                if sarf:
+                   sec_array = self.array_list[ar].define_array_performance(self.times.index,
+                                                    self.site, self.inv, self.stw)          
+                   for rw in range(len(rslt)):
+                       if rslt['ArrayPower'].iloc[rw] > 0 and sec_array['p_mp'].iloc[rw] >0:
+                           v_out = min(rslt['ArrayVolts'].iloc[rw], sec_array['v_mp'].iloc[rw])
+                           i_out = (rslt['ArrayCurrent'].iloc[rw] * 
+                                    (v_out/rslt['ArrayVolts'].iloc[rw]) +
+                                    sec_array['i_mp'].iloc[rw]  * 
+                                    (v_out/sec_array['v_mp'].iloc[rw]))
+                           rslt['ArrayVolts'].iloc[rw] = v_out
+                           rslt['ArrayCurrent'].iloc[rw] = i_out
+                           rslt['ArrayPower'].iloc[rw] = v_out * i_out                                                         
+                       elif sec_array['p_mp'].iloc[rw] > 0:
+                           rslt['ArrayVolts'].iloc[rw] = sec_array['v_mp'].iloc[rw]
+                           rslt['ArrayCurrent'].iloc[rw] = sec_array['i_mp'].iloc[rw]
+                           rslt['ArrayPower'].iloc[rw] = sec_array['p_mp'].iloc[rw]
+            rslt = rslt.assign(Month= self.times['Month'],
+                                         DayofMonth= self.times['DayofMonth'],
+                                     DayofYear= self.times['DayofYear'])
+            rslt = rslt.join(hourly_load(self.times.index,
+                                    self.load.get_load_profile()))
+            return rslt
+        return None
+
+    #TODO Should compute_powerFlows move to PVUtilities   
+    def compute_powerFlows(self):
+        """ Computes the distribution of Array power to loads and 
+            a battery bank if it exists.  Returns a DataFrame containing
+            performance data
+            """
+        self.array_out = self.combine_arrays()
+        PO = np.zeros(len(self.array_out))  # amount of total load satisfied
+        PS = np.zeros(len(self.array_out))  # fraction of load satisfied Power_out/TotLoad
+        DE = np.zeros(len(self.array_out))  # amount of Array Power used to provide load
+        BS = np.zeros(len(self.array_out))  # battery soc
+        BD = np.zeros(len(self.array_out))  # power drawn from battery
+        BP = np.zeros(len(self.array_out))  # remaining amount of usable Battery Power
+        SL = np.zeros(len(self.array_out))  # load imposed by system chgCntlr * inverter
+        EM = np.empty(len(self.array_out), dtype=object) # recorded error messages
+        hdr = ' Indx \t ArP  \t ArI  \t ArV  \t dcLd \t acLd \t ttLd '
+        hdr += '\t  PO  \t  PS  \t  DE  \t  SL  \t  BP  \t  BD  \t  BS  \t  EM\n'
+        outln = '{0:06}\t{1:6.2f}\t{2:6.2f}\t{3:6.2f}\t{4:6.2f}\t'
+        outln += '{5:6.2f}\t{6:6.2f}\t{7:6.2f}\t{8:6.2f}\t{9:6.2f}\t'
+        outln += '{10:6.2f}\t{11:6.2f}\t{12:6.2f}\t{13:6.2f}\t{14}\n'
+        bflg = self.bnk.is_defined()
+        cflg = self.chgc.is_defined()
+        self.out_rec = hdr
+        for tindx in range(len(self.array_out)):
+            wkDict = dict()
+            ArP = self.array_out['ArrayPower'].iloc[tindx]
+            ArV = self.array_out['ArrayVolts'].iloc[tindx]
+            ArI = self.array_out['ArrayCurrent'].iloc[tindx]
+            # Correct for possible power backflow into array
+            if ArP <= 0 or ArV <= 0 or ArI <= 0:
+                ArP = 0.0
+                ArV = 0.0
+                ArI = 0.0
+            dcLd = self.array_out['DC_Load'].iloc[tindx]
+            acLd = self.array_out['AC_Load'].iloc[tindx]
+            if not cflg:
+                # No Charge Controller in System
+                if dcLd > 0.0 and ArP >0.0:
+                    # Load to service
+                    if ArP > dcLd:
+                        wkDict['PO'] = dcLd
+                    else:
+                        wkDict['PO'] = ArP                   
+                    wkDict['DE'] = wkDict['PO']/ArP
+                    wkDict['PS'] = wkDict['PO']/dcLd             
+            else:
+                #  Charge Controller in System
+                self.chgc.Control_Output(ArP, ArV, ArI, acLd, dcLd, wkDict)
+
+            # update arrays for tindx
+            PO[tindx] = wkDict.pop('PO', 0.0)
+            PS[tindx] = wkDict.pop('PS', 0.0)
+            DE[tindx] = wkDict.pop('DE', 0.0)
+            SL[tindx] = wkDict.pop('SL', 0.0)
+            if bflg:
+                BS[tindx] = wkDict.pop('BS', self.bnk.get_soc())*100
+                BD[tindx] = wkDict.pop('BD', 0.0)
+                BP[tindx] = wkDict.pop('BP', self.bnk.current_power())
+            msg = ''
+            errfrm = None
+            if 'Error' in wkDict.keys():
+                days = 1 + tindx//24
+                errfrm = wkDict['Error']
+                msg = 'After {0} days '.format(days)
+                EM[tindx] = msg + errfrm[0].replace('\n', ' ')
+            else:
+                EM[tindx]= ""
+            self.out_rec += outln.format(tindx, ArP, ArV, ArI,
+                                         dcLd, acLd, dcLd+acLd, 
+                                         PO[tindx], PS[tindx], DE[tindx],
+                                         SL[tindx], BP[tindx], BD[tindx], 
+                                         BS[tindx], EM[tindx])
+            if self.debug and errfrm != None:
+                if self.errflg == False and errfrm[1] != 'Fatal':
+                    self.errflg = True
+                    self.stw.show_message(msg + errfrm[0], errfrm[1])
+                if errfrm[1] == 'Fatal':
+                    msg = 'After {0} days '.format(days)
+                    self.errflg = True
+                    self.stw.show_message(msg + errfrm[0], errfrm[1])                  
+                    break
+
+        # Create the DataFrame
+        rslt = pd.DataFrame({'PowerOut': PO,
+                             'ArrayPower': self.array_out['ArrayPower'],
+                           'Service': PS,
+                           'DelvrEff': DE,
+                           'BatSoc': BS,
+                           'BatDrain': BD,
+                           'BatPwr': BP
+                           }, index = self.times.index)
+
+        rslt = rslt.assign(Month= self.times['Month'],
+                                     DayofMonth= self.times['DayofMonth'],
+                                 DayofYear= self.times['DayofYear'])
+        rslt = rslt.join(hourly_load(self.times.index,
+                                self.load.get_load_profile()))
+        return rslt
 
     def execute_simulation(self):
         """ Perform System Analysis     """
@@ -213,75 +363,76 @@ class SPVSIM():
                 self.rdw.children[kys.pop()].destroy()
 
         if self.perform_base_error_check():
+            self.errflg = False
+            rt = datetime.now()
+            ft = 'run_{0}_{1:02}_{2}_{3:02}{4:02}{5:02}.txt'
+            self.outfile = ft.format(rt.year, rt.month, rt.day, 
+                                     rt.hour, rt.minute, rt.second)
+            self.outrec = None
+            bnkflg = self.bnk.is_defined()
             if self.stw is not None:
                 self.stw.show_message('Starting System Analysis')
             self.loc = self.site.get_location()
-            self.create_time_indices(self.site.read_attrb('tz'))
-            self.site.get_atmospherics(self.times, self.stw)
-            self.array_out = self.ary.define_array_performance(self.times,
-                                                self.site, self.inv, self.stw)
-            self.array_out = self.array_out.assign(Month= self.months,
-                                             DayofMonth= self.days_of_month,
-                                         DayofYear= self.days_of_year)
-
-            self.array_out =self.array_out.join(hourly_load(self.times,
-                                        self.load.get_load_profile()))
-            self.build_monthly_performance(self.site.read_attrb('tz'))
-            if self.stw is not None:
+            self.times = create_time_indices(self.site.read_attrb('tz'))
+            self.site.get_atmospherics(self.times.index, self.stw)
+            if bnkflg:
+                self.bnk.initialize_bank()           
+            self.array_out = self.combine_arrays()
+            self.mnthly_array_perfm = build_monthly_performance(self.array_out, 
+                                                                'ArrayPower')
+            dl = np.array([self.load.get_daily_load()]*12)
+            dlf = pd.DataFrame({'Daily Load':dl}, 
+                               index=self.mnthly_array_perfm[0].index.values)
+            self.mnthly_array_perfm[0] = self.mnthly_array_perfm[0].join(dlf)            
+            if self.stw is not None and self.errflg == False:
                 self.stw.show_message('Panel Analysis Completed')
-            self.batDrain  = self.bnk.define_battery_drain(self.array_out,
-                                                           self.inv.get_parameters())
+
             if self.stw is not None:
-                srvc = self.batDrain['Service']
-                nosrvc = srvc[srvc == False]
-                k = 100* (len(srvc) - len(nosrvc))/len(srvc)
-                ms = 'System Design provides Power to Load {0:.2f}% of the time'.format(k)
-                if k < 100:
-                    ms += '\n\tDesign fails to deliver required load {0} hours out of {1} hours per year'.format(len(nosrvc), len(srvc))
-                ms += '\n\tAnnual Battery Charging Cycles = {0:.2f} out of {1} specified lifetime cycles'.format(self.bnk.tot_cycles,
-                                                           self.bnk.max_dischg_cycles)
-                self.stw.show_message(ms)
+                self.stw.show_message('Starting Power Analysis')
+            self.power_flow = self.compute_powerFlows()
+            self.mnthly_pwr_perfm = build_monthly_performance(self.power_flow,
+                                                              'PowerOut')
+            self.mnthly_pwr_perfm[0] = self.mnthly_pwr_perfm[0].join(dlf)  
+            if self.stw is not None and self.errflg == False:
+                self.stw.show_message('Power Analysis Completed')
+
+            if self.stw is not None:
+                if self.errflg == False:
+                    srvchrs = self.power_flow['Service'].sum()
+                    dmndhrs = self.load.get_demand_hours()*365
+                    if dmndhrs > 0:
+                        k = srvchrs/dmndhrs
+                        ms = 'System Design provides Power to Load {0:.2f}% of the time'.format(k*100)
+                        if k < 100:
+                            ms += '\n\tDesign delivers required load {0:.2f} hours out of {1} demand hours per year'.format(k*dmndhrs, dmndhrs)
+                        if self.bnk.check_definition():
+                            ms += '\n\tAnnual Battery Charging Cycles = {0:.2f} out of {1} specified lifetime cycles'.format(self.bnk.tot_cycles,
+                                                                   self.bnk.max_dischg_cycles)
+                        self.stw.show_message(ms)
+                    else:
+                        self.stw.show_message('Analysis complete')
             if self.debug:
                 self.debug_next()
 
     def debug_next(self):
-        """ Find a way to clear the results window on starting an analysis  """
-        pass
-
-#        suns = self.site.get_sun_times(self.times)
-#        print(self.batDrain.head())
-#        sr_soc = np.zeros(len(suns))
-#        ss_soc = np.zeros(len(suns))
-#        day = [None]*len(suns)
-#        for i in range(len(suns)):
-#            snr = suns['Sunrise'].iloc[i]
-#            sns = suns['Sunset'].iloc[i]
-#            snrtm = create_time_mask(snr, 'Lead')
-#            snstm = create_time_mask(sns, 'Lag')
-#            day[i] = snrtm
-#            sr_soc[i] = self.batDrain.loc[snrtm]['Bat_SOC']
-#            ss_soc[i] = self.batDrain.loc[snstm]['Bat_SOC']
-#        bat_ovr = pd.DataFrame(data={'Sunrise':sr_soc, 'Sunset':ss_soc},
-#                               index= day)
-#
-#        bat_ovr.plot( kind= 'Line', title='Bank Overview')
-#        plt.show()
-
-
+        """ Handy function for debugging  """
+        print(self.times)
+        calndr = create_calendar_indices(self.site.read_attrb('tz'))
+        print(calndr.head())
+        print(calndr.index)
+        if self.perf_rept:
+            fo = open(self.outfile, 'w')
+            fo.write(self.out_rec)
+            fo.close()
 
     def perform_base_error_check(self):
         """ method to conduct basic error checks
             returns True if and only if no errors are found """
         # Tests for Site Definition """
+        bflg = False
+        invflg = False
+
         if not self.site.check_definition():
-            return False
-
-        # Tests for Load Definition
-        if not self.load.check_definition():
-            return False
-
-        #Tests for battery & bank definition
-        if not self.bnk.check_definition():
             return False
 
         #Tests for panel & Array definition
@@ -289,47 +440,21 @@ class SPVSIM():
             return False
 
         # Tests for proper inverter definition """
-        if not  self.inv.check_definition():
+        if sum(self.load.get_load_profile()['AC']) > 0:
+            if not self.inv.check_definition():
+                return False       
+            else:
+                invflg = True
+
+        if self.bnk.check_definition():
+            bflg = True
+
+        """Tests for Charge Controller definition 
+           (only reqd if an iverter or battery is defined) """
+        if (invflg or bflg) and not self.chgc.check_definition():
             return False
 
         return True
-
-    def create_time_indices(self, tm_z):
-        """ Create Base Dastaframe indicies for use in running simulations """
-        now = date.today()
-        self.baseyear = now.year-2
-        if self.baseyear%4 == 0:
-            # Don't use leap year
-            self.baseyear -= 1
-        st = '{0}0101T0000{1:+}'.format(self.baseyear, tm_z)
-        nt = '{0}1231T2300{1:+}'.format(self.baseyear, tm_z)
-        self.times = pd.DatetimeIndex(start= st,
-                                 end= nt,
-                                 freq='H')
-        self.months = month_timestamp(self.times).astype(int)
-        self.days_of_year = doy_timestamp(self.times).astype(int)
-        self.days_of_month = dom_timestamp(self.times).astype(int)
-
-    #TODO Update monthly performance to combine multiple array_out dataFrames by summing p_mp data
-    def build_monthly_performance(self, tm_z):
-        """ Using Array Performance data create Monthly Synopsis of
-            system performance  """
-        self.mpi = build_monthly_performance_info(self.array_out, 'p_mp')
-        dl = np.array([self.load.get_daily_load()]*12)
-        dlf = pd.DataFrame({'Daily Load':dl}, index=np.arange(1,13))
-        self.mpi = self.mpi.join(dlf)
-        min_mnth, min_day = find_worst_day(self.mpi)
-        max_mnth, max_day = find_best_day(self.mpi)
-        wds = dateutil.parser.parse('{0}{1:02}{2:02}T0000{3:+}'.format(self.baseyear, min_mnth, min_day, tm_z) )
-        wde = dateutil.parser.parse('{0}{1:02}{2:02}T2300{3:+}'.format(self.baseyear, min_mnth, min_day, tm_z) )
-        self.worst_day = [wds, wde]
-        self.worst_day_perform = self.array_out.loc[pd.Timestamp(wds):pd.Timestamp(wde)]
-        bds = dateutil.parser.parse('{0}{1:02}{2:02}T0000{3:+}'.format(self.baseyear, max_mnth, max_day, tm_z) )
-        bde = dateutil.parser.parse('{0}{1:02}{2:02}T2300{3:+}'.format(self.baseyear, max_mnth, max_day, tm_z) )
-        self.best_day_perform = self.array_out.loc[pd.Timestamp(bds):pd.Timestamp(bde)]
-        self.best_day = [bds, bde]
-
-
 
     #TODO in Print Load improve formatting control for better tabular results
     def print_load(self):
@@ -362,27 +487,80 @@ class SPVSIM():
         else:
             print(s)
 
-    #TODO fix SiteLoad Class to load or set master during initialization
     def show_load_profile(self):
         """ Method to build & display the load profile graphic """
         self.load.show_load_profile(self.rdw)
 
+    def show_pwr_performance(self):
+        """ Create graphic of Annual Power Delivery vice Load  """
+        if self.array_out is not None:
+            mpi = self.mnthly_pwr_perfm[0]
+            xaxis = np.arange(1,13)
+            pltslist = [{'label':'Avg Power', 'data':mpi.loc[:,'Avg PowerOut'],
+                        'type': 'Bar', 'color': 'b', 'width': 0.2, 'xaxis': xaxis},
+                        {'label':'Best Power', 'data':mpi.loc[:,'Best PowerOut'],
+                        'type': 'Bar', 'color': 'g', 'width': 0.2,
+                        'xaxis':np.arange(1,13) - 0.2},
+                         {'label':'Worst Power', 'data':mpi.loc[:,'Worst PowerOut'],
+                        'type': 'Bar', 'color': 'y', 'width': 0.3,
+                        'offset': 0.3, 'xaxis':np.arange(1,13) + 0.2},
+                          {'label':'Daily Load', 'data':mpi.loc[:,'Daily Load'],
+                        'type': 'Line', 'color': 'r', 'xaxis': xaxis,
+                        'width': 4.0, 'linestyle': 'solid' }                          
+                        ]
+            dp = tbf.plot_graphic(self.rdw, 'Month of Year', 'Watts Relative to Load',
+                                  np.arange(1,13),
+                                  pltslist, 'Power Output Performance',
+                                  (6,4))
+            
+    def show_pwr_best_day(self):
+        """ Create graphic of Solar Array Best Day Performance  """
+        if self.array_out is not None:
+            best_day_perform = self.power_flow.loc[self.power_flow['DayofYear'] == self.mnthly_pwr_perfm[1]]
+            xlabels = np.arange(24)
+            pltslist = [{'label': 'Power Output',
+                         'data': best_day_perform['PowerOut'],
+                         'type': 'Line', 'xaxis': xlabels,
+                         'width': 2.0, 'color': 'b'},
+                {'label': 'Hourly Load',
+                         'data': best_day_perform['Total_Load'],
+                         'type': 'Line', 'xaxis': xlabels ,
+                         'width': 2.0, 'color': 'r'}]
+            dp = tbf.plot_graphic(self.rdw, 'Time of Day', 'Watts', xlabels,
+                                  pltslist,
+                                  'Best Day Power Output', (6,4))
 
+    def show_pwr_worst_day(self):
+        """ Create graphic of Solar Array Best Day Performance  """
+        if self.array_out is not None:
+            worst_day_perform = self.power_flow.loc[self.power_flow['DayofYear'] == self.mnthly_pwr_perfm[2]]
+            xlabels = np.arange(24)
+            pltslist = [{'label': 'Power Output',
+                         'data': worst_day_perform['PowerOut'],
+                         'type': 'Line', 'xaxis': xlabels,
+                         'width': 2.0, 'color': 'b'},
+                {'label': 'Hourly Load',
+                         'data': worst_day_perform['Total_Load'],
+                         'type': 'Line', 'xaxis': xlabels ,
+                         'width': 2.0, 'color': 'r'}]
+            dp = tbf.plot_graphic(self.rdw, 'Time of Day', 'Watts', xlabels,
+                                  pltslist,
+                                  'Worst Day Power Output', (6,4))
 
-    #TODO Move show_array_performance to PVArray Combo Class
     def show_array_performance(self):
         """ Create graphic of Annual Solar Array Performance """
         if self.array_out is not None:
+            mpi = self.mnthly_array_perfm[0]
             xaxis = np.arange(1,13)
-            pltslist = [{'label':'Avg Power', 'data':self.mpi.loc[:,'Avg Power'],
+            pltslist = [{'label':'Avg Power', 'data':mpi.loc[:,'Avg ArrayPower'],
                         'type': 'Bar', 'color': 'b', 'width': 0.2, 'xaxis': xaxis},
-                        {'label':'Best Power', 'data':self.mpi.loc[:,'Best Power'],
+                        {'label':'Best Power', 'data':mpi.loc[:,'Best ArrayPower'],
                         'type': 'Bar', 'color': 'g', 'width': 0.2,
-                        'xaxis':xaxis.copy() - 0.2},
-                         {'label':'Worst Power', 'data':self.mpi.loc[:,'Worst Power'],
+                        'xaxis':np.arange(1,13) - 0.2},
+                         {'label':'Worst Power', 'data':mpi.loc[:,'Worst ArrayPower'],
                         'type': 'Bar', 'color': 'y', 'width': 0.3,
-                        'offset': 0.3, 'xaxis':xaxis.copy() + 0.2},
-                          {'label':'Daily Load', 'data':self.mpi.loc[:,'Daily Load'],
+                        'offset': 0.3, 'xaxis':np.arange(1,13) + 0.2},
+                          {'label':'Daily Load', 'data':mpi.loc[:,'Daily Load'],
                         'type': 'Line', 'color': 'r', 'xaxis': xaxis,
                         'width': 4.0, 'linestyle': 'solid' }
                          ]
@@ -391,34 +569,34 @@ class SPVSIM():
                                   pltslist, 'Annual Array Performance',
                                   (6,4))
 
-    #TODO Move show_array_best_day to PVArray Combo Class
     def show_array_best_day(self):
         """ Create graphic of Solar Array Best Day Performance  """
         if self.array_out is not None:
+            best_day_perform = self.array_out.loc[self.array_out['DayofYear'] == self.mnthly_array_perfm[1]]
             xlabels = np.arange(24)
             pltslist = [{'label': 'Array Power',
-                         'data': self.best_day_perform['p_mp'],
+                         'data': best_day_perform['ArrayPower'],
                          'type': 'Line', 'xaxis': xlabels,
                          'width': 2.0, 'color': 'b'},
                 {'label': 'Hourly Load',
-                         'data': self.best_day_perform['Total_Load'],
+                         'data': best_day_perform['Total_Load'],
                          'type': 'Line', 'xaxis': xlabels ,
                          'width': 2.0, 'color': 'r'}]
             dp = tbf.plot_graphic(self.rdw, 'Time of Day', 'Watts', xlabels,
                                   pltslist,
                                   'Best Day Array Output', (6,4))
 
-    #TODO Move show_array_worst_day to PVArray Combo Class
     def show_array_worst_day(self):
         """ Create graphic of Solar Array Worst Day Performance  """
         if self.array_out is not None:
+            worst_day_perform = self.array_out.loc[self.array_out['DayofYear'] == self.mnthly_array_perfm[2]]
             xlabels = np.arange(24)
             pltslist = [{'label': 'Array Power',
-                         'data': self.worst_day_perform['p_mp'],
+                         'data': worst_day_perform['ArrayPower'],
                          'type': 'Line', 'xaxis': xlabels,
                          'width': 2.0, 'color': 'b'},
                 {'label': 'Hourly Load',
-                         'data': self.worst_day_perform['Total_Load'],
+                         'data': worst_day_perform['Total_Load'],
                          'type': 'Line', 'xaxis': xlabels ,
                          'width': 2.0, 'color': 'r'}]
             dp = tbf.plot_graphic(self.rdw, 'Time of Day', 'Watts', xlabels,

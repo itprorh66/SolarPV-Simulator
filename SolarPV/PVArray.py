@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Oct  2 12:57:18 2018
+Modified on 02/22/2019 for version 0.1.0
+
 
 @author: Bob Hentz
 
@@ -28,7 +30,6 @@ from pvlib import *
 from pvlib.pvsystem import *
 from pvlib.solarposition import spa_python
 from pvlib.irradiance import aoi, total_irrad
-
 
 class PVArray(Component):
     """ Methods associated with the definition, display, and operation of a
@@ -59,6 +60,9 @@ class PVArray(Component):
     def check_arg_definition(self):
         """ Check Array definition """
         msg = ''
+        bf, bmsg = self.parts[0].check_arg_definition()
+        if not bf:
+            return bf, bmsg
         if ((self.read_attrb('tilt') == 0.0 and
             self.read_attrb('azimuth')  == 0.0) or
             self.read_attrb('mtg_cnfg') == "" or
@@ -66,12 +70,6 @@ class PVArray(Component):
             self.read_attrb('ary_Vmp') == 0.0):           
             msg = 'Array Specification incomplete or undefined'
             return False, msg 
-        if (self.read_attrb('ary_Vmp') < 
-            self.master.bnk.read_attrb('bnk_vo') *1.1 or
-           self.read_attrb('ary_Vmp') > 
-           self.master.bnk.read_attrb('bnk_vo') *1.5):
-            msg = 'Array Specification is a mismatch with Bank Sizing'
-            return False, msg
         return True, msg
   
 
@@ -102,6 +100,7 @@ class PVArray(Component):
         return True
 
     def display_input_form(self, parent_frame):
+        """ Generate the data input form """
         self.parent_frame = parent_frame
         if len(self.parts) > 0:
             pnl = self.parts[0]
@@ -113,9 +112,12 @@ class PVArray(Component):
                       borderwidth= 5, relief= GROOVE, padx= 10, pady= 10, ipadx= 5, ipady= 5)
         return self.form
 
-    #TODO Update to utilize Site Class instance rather than loc value
-    #TODO Use site.get_air_temp and site.get_wind_spd 
     def define_array_performance(self, times, cur_site, cur_inv, stat_win):
+        inv_name = None
+        inv_parameters = None
+        if cur_inv is not None:
+            inv_name = cur_inv.read_attrb('Name')
+            inv_parameters = cur_inv.get_parameters()
         surf_tilt = self.read_attrb('tilt')
         surf_azm = self.read_attrb('azimuth')
         surf_alb = self.read_attrb('albedo')
@@ -125,8 +127,6 @@ class PVArray(Component):
         mdl_rack_config =self.read_attrb('mtg_cnfg')
         pnl_name = self.parts[0].read_attrb('Name')
         pnl_parms = self.parts[0].get_parameters()
-        inv_name = cur_inv.read_attrb('Name')
-        inv_parameters = cur_inv.get_parameters()
         air_temp = cur_site.get_air_temp(times, stat_win)['Air_Temp']
         wnd_spd = cur_site.get_wind_spd(times, stat_win)['Wind_Spd']
         pvsys = PVSystem(surf_tilt, surf_azm, surf_alb,
@@ -146,9 +146,9 @@ class PVArray(Component):
         airmass = loc.get_airmass(times, solar_position=solpos, model='kastenyoung1989')
         
         """ Compute ghi, dni, & dhi """
-        csky= loc.get_clearsky(times, model='ineichen', solar_postion= solpos, 
+        csky= loc.get_clearsky(times, model='ineichen', solar_position= solpos, 
                                dni_extra=None)
-        
+#        csky= loc.get_clearsky(times, model='ineichen')        
         """ Compute 'aoi' """
         aoi = pvsys.get_aoi(solpos['zenith'], solpos['azimuth'])
          
@@ -165,19 +165,11 @@ class PVArray(Component):
         vars_dict = panel_types[self.parts[0].read_attrb('Technology')]
         egrf = vars_dict.pop('EgRef', 1.121)
         dgdt = vars_dict.pop('dEgdT', -0.0002677)
-#TODO   Still need to incorporate panel mref data into analysis
-#            mref = vars_dict.pop('M')
-#            if mref is not None:
-#                mref = np.polyval(mref, airmass) 
-#            print(mref)
         
-        photocurrent, saturation_current, resistance_series, resistance_shunt, nNsVth = pvsystem.calcparams_desoto(total_irrad['poa_global'],
-                                         temp_cell= temps['temp_cell'],
-                                         alpha_isc= pnl_parms['alpha_sc'],
-                                         module_parameters= pnl_parms,
-                                         EgRef= egrf,
-                                         dEgdT= dgdt)
-        
+        photocurrent, saturation_current, resistance_series, resistance_shunt, nNsVth = (
+            pvsys.calcparams_desoto(total_irrad['poa_global'],
+                                             temp_cell= temps['temp_cell']))
+                 
         """ Compute Total Array  'i_sc',  'v_oc',  'i_mp',  'v_mp',
             'p_mp',  'i_x', &  'i_xx' """
         array_out = pvsys.scale_voltage_current_power( pvsys.singlediode(photocurrent, 

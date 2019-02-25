@@ -3,6 +3,7 @@
 """
 Created on Thu Sep 27 17:00:07 2018
 Modified   Wed Dec  5 2018 (Fix Issue 2, Handle DC Loads)
+Modified on 02/25/2019 for version 0.1.0
 
 @author: Bob Hentz
 
@@ -27,22 +28,20 @@ from FieldClasses import *
 from Parameters import battery_types
 from Component import *
 from guiFrames import plot_graphic
-from PVUtilities import create_time_mask
+#from PVUtilities import create_time_mask
 
 class PVBatBank(Component):
     """ Methods associated with battery definition, display, and operation """
     def __init__(self, master, **kargs):
         Component.__init__(self, master, 'Battery Bank', **kargs)
-#        self._dischrg_cycle_max = 85  #Used to determine %of charge required to define
-#                                      #full discharge cycle
-        self._chg_break = 0.85
+        
         self.chg_cycle_count = [0,0]
         self.tot_cycles = 0
         self.bnk_vo = 0
         self.soc = 1.0
+        self.cur_cap = None
         self.max_dischg_cycles = None
         self.max_dischg_dod = None
-        self.bat_drain = None
 
     def _define_attrbs(self):
         self.args = {
@@ -73,14 +72,54 @@ class PVBatBank(Component):
             return lc
         else:
             return 0
-        
+    
+    def initialize_bank(self, socpt = 0.75):
+        """ Set Battery Bank status to known starting point """
+        self.chg_cycle_count = [0,0]
+        self.tot_cycles = 0 
+        self.soc= socpt + (self.read_attrb('doc')/100)*(1-socpt)
+        self.cur_cap = self.read_attrb('bnk_cap')*self.soc
+        self.set_volts()
+    
+    def set_volts(self):
+        """ set Bank Voltage """
+        bnk_vnom = self.read_attrb('bnk_vo')
+        eff = battery_types[self.parts[0].read_attrb('b_typ')][1]
+        if self.soc == 1:
+            self.bnk_vo = bnk_vnom
+        elif self.soc == 0:
+            self.bnk_vo = 0            
+        else:
+            try:
+                self.bnk_vo = eff*((bnk_vnom*1.2/6.22)*log(self.soc))+ bnk_vnom
+            except ValueError:
+                print(' eff= {0}, bnk_vnom= {1}, soc= {2}'.format(
+                        eff, bnk_vnom, self.soc))
+                        
+    def current_capacity(self):
+        """ return AH capacity available from Battery Bank """
+        if self.cur_cap == None or self.soc == 1:
+            self.soc = 1
+            self.cur_cap = self.read_attrb('bnk_cap')
+        return self.read_attrb('bnk_cap')*self.soc
+    
+    def current_power(self):
+        """ returns available battery power in watts. """
+        return self.current_capacity() * self.get_volts()
+    
+    def get_volts(self):
+        """ Return Current Battery Voltage  """
+        if self.soc == 1:
+            self.bnk_vo = self.read_attrb('bnk_vo')
+        return self.bnk_vo
+    
     def get_soc(self):
         """ Return current Bnk SOC """
         return self.soc
 
     def is_okay(self):
-        """ Tests for battery ablityto provide power """
-        return self.soc >  1.01 * (1- (self.read_attrb('doc')/100))
+        """ Tests for battery SOC above Minimum """
+        return self.soc >  (1- (self.read_attrb('doc')/100))
 
     def perform_unique_updates(self, attrib, val):
         """ Update Bnk cap, vo, & tbats based on changes """
@@ -88,7 +127,6 @@ class PVBatBank(Component):
         self.form.wdg_dict['bnk_vo'].set_val()
         self.form.wdg_dict['bnk_cap'].set_val()        
         self.form.wdg_dict['bnk_tbats'].set_val()
-
         
     def update_attributes(self):
         """ Update bank attributes  """
@@ -99,46 +137,7 @@ class PVBatBank(Component):
             self.set_attribute('bnk_cap', (bat.read_attrb('b_rcap')*
                                         self.read_attrb('bnk_sip')))
             self.set_attribute('bnk_tbats',(self.read_attrb('bnk_uis')*
-                                        self.read_attrb('bnk_sip')))
-            
-    def update_soc(self, drain):
-        """ Update SoC and Vo based on drain
-            Assumes Simulation Run has already checked valid definitions"""
-        i_chg = 0.0
-        max_dod = 1- self.read_attrb('doc')/100
-        bnk_vnom = self.read_attrb('bnk_vo')
-        if self.soc == 1:
-            self.bnk_vo = bnk_vnom
-        bnk_voc= self.bnk_vo * 1.15
-        bnk_cap = self.read_attrb('bnk_cap')
-        bnk_Idis = bnk_cap/ self.parts[0].read_attrb('b_rhrs')
-        eff = battery_types[self.parts[0].read_attrb('b_typ')][1]
-        if drain > 0:
-            # Charging Battery State
-            if self.soc < 1:
-                if self.soc <= max_dod:
-                    i_chg = 2 * bnk_Idis
-                elif self.soc <= self._chg_break:
-                    i_chg = (drain/bnk_voc) *(self.soc/self._chg_break)
-                elif self.soc < 1.0:
-                    i_chg = 6*((1-self.soc)*drain)/bnk_voc
-        else:
-            # Discharging Battery           
-            if self.soc > max_dod:
-                i_chg = drain/ self.bnk_vo
-        new_soc = ((self.soc*bnk_cap) + i_chg)/bnk_cap
-        self.update_cycle_counts(self.soc - new_soc)
-        self.soc = new_soc
-        try:
-            self.bnk_vo = eff*((bnk_voc/6.22)*log(self.soc))+ bnk_vnom
-        except:
-            print ("Battery Bank: Computation Error ")
-            print (('\tSOC: {0:f},\ti_chg: {1:f},\tCap: {2:f}'.
-                    format(self.soc, i_chg, bnk_cap)))
-            print (('\tSOC: {0:f},\teff: {1:f},\tVoc: {2:f},\tVnom: {3:f}'.
-                    format(self.soc, eff, bnk_voc, bnk_vnom)))
-        return self.soc
-
+                                        self.read_attrb('bnk_sip')))        
     def get_total_cycles(self):
         """ return the total number of charging cycles experienced by battery """
         return self.tot_cycles
@@ -147,10 +146,9 @@ class PVBatBank(Component):
         """ Verify adequate battery definition """
         msg = ''
         if len(self.parts) == 0:
-            msg = 'Bank component Battery is undefined'
+            msg = 'Battery is undefined'
             return False, msg
-        bat = self.parts[0]
-        flag, msg = bat.check_arg_definition()
+        flag, msg = self.parts[0].check_arg_definition()
         if flag:
             self.update_attributes()
             return True, msg
@@ -159,9 +157,19 @@ class PVBatBank(Component):
 
     def validate_size_setting(self):
         """ triggerd by change in UIS or SIP """
-        uis =  float(self.form.wdg_dict['bnk_uis'].get_val())
-        sip =  float(self.form.wdg_dict['bnk_sip'].get_val())
-        self.set_attribute('bnk_tbats', uis * sip )
+        uis = 1
+        sip = 1
+        try:
+            uis =  float(self.form.wdg_dict['bnk_uis'].get_val())
+        except:
+            self.set_attribute('bnk_uis', uis)
+            self.form.wdg_dict['bnk_uis'].set_val()
+        try:
+            sip =  float(self.form.wdg_dict['bnk_sip'].get_val())
+        except:
+            self.set_attribute('bnk_sip', sip)
+            self.form.wdg_dict['bnk_sip'].set_val()
+        self.set_attribute('bnk_tbats', sip * uis)
         self.form.wdg_dict['bnk_tbats'].set_val()
         if len(self.parts) > 0:
             bat = self.parts[0]
@@ -188,110 +196,88 @@ class PVBatBank(Component):
             ld = sum(self.master.load.get_load_profile()['Total'])
             return round((doa*ld)/(gv*doc*eff))
         
-    def define_battery_drain(self, array_data, inverter_dict):
-        """ Compute Hourly Battery Drain
-            array_data = dataFrame of hourly performance data for the panel array
-            inverter_dict = Dictionary of Inverter parameters from CEC inverter file
-            returns a Dataframe of hourly battery drain estimates where:
-                - sign implies power draw from battery
-                + sign implies power add to battery
-            """
-
-        #TODO move estimate_required_dcpower to inverter class
-        def estimate_required_dcPower(pac, paco, pdco, pnt):
-            """ Estimates the amount of pdc required to drive the ac load 
-                defined by pac
-                   pac = required electrical load to be produced
-                   paco = rated inverter ac power
-                   pdco = rated inverter dc power
-                   pnt = rated quiescent inverter power draw """
-            rslt = None
-            ie_ref = 0.9637
-            if pac < paco:
-                rslt =  pnt + pac*pdco/paco
-            else:
-                rslt = pnt + pdco
-            return rslt/ie_ref
-
-        bd = np.zeros(len(array_data))
-        soc = np.zeros(len(array_data))
-        pwr_out = np.zeros(len(array_data))
-        bnk_pwr = np.zeros(len(array_data))
-#        pac_load = array_data['Load']
-        paco = inverter_dict['Paco']
-        pdco = inverter_dict['Pdco']
-        pnt = inverter_dict['Pnt']
-        for indx in range(len(array_data)):
-            pdc =estimate_required_dcPower(array_data['AC_Load'].iloc[indx], 
-                                           paco, pdco, pnt)
-            drain = (array_data['p_mp'].iloc[indx] - 
-                    (pdc + array_data['DC_Load'].iloc[indx]))
-            if (drain < 0 and self.is_okay())  or drain > 0:
-                pwr_out[indx] = True
-            else:
-                pwr_out[indx] = False     
-            bd[indx] = drain
-            soc[indx] = self.update_soc(drain)*100
-            bnk_pwr[indx] = soc[indx] * self.read_attrb('bnk_cap')/100
-        self.bat_drain = pd.DataFrame({'Bat_Drain': bd, 'Bat_SOC': soc, 
-                                  'Bat_PWR': bnk_pwr, 'Service': pwr_out}, 
-                                 index= array_data.index)
-        return self.bat_drain
-
-    #TODO Improve method for selecting best day & worst day             
+    def update_soc(self, i_in, wkDict):
+        """ Updates bank capacity by i_in and then updates the 
+            Battery elements of wkDict """
+        ermsg = 'SOC is less than 0 for i={0}, cap={1}. '
+        new_soc = self.soc
+        old_soc = self.soc
+        i_chg = 0
+        bd = 0
+        if abs(i_in) > 0:
+            i_chg = min(abs(i_in), self.current_capacity())
+            i_chg = i_chg * (i_in/abs(i_in))
+            bd = self.bnk_vo * i_chg        
+            self.cur_cap += i_in
+            if self.cur_cap > self.read_attrb('bnk_cap'):
+               self.cur_cap = self.read_attrb('bnk_cap')
+            if self.cur_cap > 0:
+                self.cur_cap = 0                
+            new_soc = min(self.cur_cap/self.read_attrb('bnk_cap'), 1)
+            assert new_soc >= 0, ermsg.format(i_in,self.cur_cap)
+            self.soc = new_soc 
+            self.set_volts()
+        wkDict['BD'] = bd
+        wkDict['BS'] = self.soc
+        wkDict['BP'] = self.current_power()
+        self.update_cycle_counts(old_soc - new_soc) 
+      
     def show_bank_drain(self):
         """ Create graphic of Battery Bank Drain Performance  """
-        if self.bat_drain  is not None:
+        if self.master.power_flow  is not None:
             xlabels = np.arange(24)
             pltslist = [
                 {'label': 'Best Day Drain', 
-                  'data': self.bat_drain ['Bat_Drain'].loc[pd.Timestamp(self.master.best_day[0]):pd.Timestamp(self.master.best_day[1])],
+                  'data': self.master.power_flow['BatDrain'].loc[
+                          self.master.power_flow['DayofYear'] == self.master.mnthly_pwr_perfm[1]],
                   'type': 'Line', 'xaxis': xlabels, 
                   'width': 2.0, 'color': 'b'},
                 {'label': 'Worst Day Drain', 
-                  'data': self.bat_drain ['Bat_Drain'].loc[pd.Timestamp(self.master.worst_day[0]):pd.Timestamp(self.master.worst_day[1])],
+                  'data': self.master.power_flow['BatDrain'].loc[
+                          self.master.power_flow['DayofYear'] == self.master.mnthly_pwr_perfm[2]],
                   'type': 'Line', 'xaxis': xlabels , 
                   'width': 2.0, 'color': 'r'}]
             dp = plot_graphic(self.master.rdw, 'Time of Day', 'Watts', xlabels, 
                                   pltslist, 'Range of Bank Drain', (6,4))
 
-    #TODO Improve method for selecting best day & worst day     
     def show_bank_soc(self):
         """ Create graphic of Battery Bank SOC Performance  """
-        if self.bat_drain  is not None:
+        if self.master.power_flow  is not None:
             xlabels = np.arange(24)
             pltslist = [{'label': 'Best Day SOC', 
-                         'data': self.bat_drain ['Bat_SOC'].loc[pd.Timestamp(self.master.best_day[0]):pd.Timestamp(self.master.best_day[1])],
+                         'data': self.master.power_flow ['BatSoc'].loc[
+                                 self.master.power_flow['DayofYear'] == self.master.mnthly_pwr_perfm[1]],
                          'type': 'Line', 'xaxis': xlabels, 
                          'width': 2.0, 'color': 'b'},
                 {'label': 'Worst Day SOC', 
-                         'data': self.bat_drain ['Bat_SOC'].loc[pd.Timestamp(self.master.worst_day[0]):pd.Timestamp(self.master.worst_day[1])],
+                         'data': self.master.power_flow ['BatSoc'].loc[
+                                 self.master.power_flow['DayofYear'] == self.master.mnthly_pwr_perfm[2]],
                          'type': 'Line', 'xaxis': xlabels , 
                          'width': 2.0, 'color': 'r'}]
             dp = plot_graphic(self.master.rdw, 'Time of Day', 'SOC', xlabels, 
                                   pltslist, 'Range of Bank SOC', (6,4))
 
     def create_overview(self):
-        if self.bat_drain  is not None:
-            suns = self.master.site.get_sun_times(self.master.times)
+        if self.master.power_flow  is not None:
+            suns = self.master.site.get_sun_times(self.master.times.index)
             sr_soc = np.zeros(len(suns))
             ss_soc = np.zeros(len(suns))
             day = [None]*len(suns)
             for i in range(len(suns)):
                 snr = suns['Sunrise'].iloc[i]
                 sns = suns['Sunset'].iloc[i]
-                snrtm = create_time_mask(snr, 'Lead')
-                snstm = create_time_mask(sns, 'Lag')
+                snrtm = snr.floor('H')
+                snstm = snr.ceil('H')
                 day[i] = snrtm
-                sr_soc[i] = self.bat_drain.loc[snrtm]['Bat_SOC']
-                ss_soc[i] = self.bat_drain.loc[snstm]['Bat_SOC']
+                sr_soc[i] = self.master.power_flow.loc[snrtm]['BatSoc']
+                ss_soc[i] = self.master.power_flow.loc[snstm]['BatSoc']
             bat_ovr = pd.DataFrame(data={'Sunrise':sr_soc, 'Sunset':ss_soc},
                                    index= day)        
             return bat_ovr
     
     def show_bank_overview(self):
         """ Create graphic of Battery Bank Overview Performance  """
-        if self.bat_drain  is not None:
+        if self.master.power_flow  is not None:
             ovr = self.create_overview()
             xlabels = ovr.index
             pltslist = [{'label': 'Sunrise', 
@@ -304,7 +290,6 @@ class PVBatBank(Component):
                          'width': 2.0, 'color': 'b'}]
             dp = plot_graphic(self.master.rdw, 'Month', 'SOC', xlabels, 
                                   pltslist, 'Bank SOC', (6,4))
-
 
     def display_input_form(self, parent_frame):
         """ Generate the Data entry form for Battery Bank """
@@ -413,8 +398,7 @@ class BankForm(DataForm):
 
                 }
 
-
-        
+      
 def main():
     print ('BatBank Startup check')
 

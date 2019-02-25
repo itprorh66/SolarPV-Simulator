@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed May 30 12:04:12 2018
+Modified on 02/22/2019 for version 0.1.0
 
 @author: Bob Hentz
 
@@ -197,13 +198,6 @@ def main():
     
     root.title("Base Frame Testing")
     tabframe = Table(sl, root)
-    #tabframe.add_data(mrdat)
-#    tf = ttk.Frame(root)
-#    tf.grid(sticky= (N S E W))
-#    opts = ['Light LED', 'Light Halogen', 'Refrigerator 18 CF', 'This is a really, really long option']
-#    cc = combo_cell( tf, [0,0], [2,5], 'Light LED', opts, update_combo)
-#    for i in range(8):
-#        cx = data_cell(tf, [0,i+1], [0,0], "123456789")
     root.mainloop()
     print('\nExiting Display')
     print (sl.get_dataframe())

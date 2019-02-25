@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Sep 18 19:06:23 2018
+Modified on 02/22/2019 for version 0.1.0
 
 @author: Bob Hentz
 
@@ -34,9 +35,8 @@ class Component():
 
     def _define_attrbs(self):
         """ Overridden by each instantiation to define component attributes """
-        pass
-    
-    
+        raise NotImplementedError('Method not Implemented in Child Class')
+     
     def _check_args(self, kargs):
         """ internal method to update descriptive arguments and detect illegal
             parameters.
@@ -66,11 +66,10 @@ class Component():
         return parms
     
     def write_parameters(self, prm_dict):
+        """ use prm_dict to set component attribute values """
         if prm_dict is not None:
             for ky in self.args.keys():
                 self.args[ky] = prm_dict.pop(ky, self.read_attrb(ky))
-            
-        
     
     def set_assy(self, subsystem):
         """ add to list of components using this component """
@@ -79,27 +78,18 @@ class Component():
         
     def _attributes(self):
         """ Create a String containing self.args contents """
-        s = '{0}\n\t'.format(self.name)
-        c = 0
-#        if self.print_order is None:
+        s = '{0}\n'.format(self.name)
+        cs = '\t'
         for ky in self.args.keys():
             ns = self.args[ky].__str__()
-            if len(ns) + c >= 30:
-                s += '\n\t'
-                c = len(ns)
-            s += ns
-        return s
-#        else:
-#            for idx in range(len(self.print_order)):
-#                ky = self.print_order[idx]
-#                print (idx, ky)
-#                for ky in self.args.keys():
-#                    ns = self.args[ky].__str__()
-#                    if len(ns) + c >= 30:
-#                        s += '\n\t'
-#                        c = len(ns)
-#                    s += ns
-#            return s
+            if len(ns) + len(cs) > 30:
+                s += cs + ns + '\n'
+                cs = '\t'
+            else:
+                cs += ns +'\t'
+        if len (cs) > 1:
+            s += cs
+        return s + '\n'
 
         
     def _parts_list(self):
@@ -143,12 +133,12 @@ class Component():
     def check_arg_definition(self):
         """ Unique to each Component """
         """ Verifies the component has been properly defined """
-        pass
+        raise NotImplementedError('Method not Implemented in Child Class')
 
     def update_attributes(self): 
         """ Unique to each Component """
         """ Updates the attributes of this component based on a change """
-        pass
+        raise NotImplementedError('Method not Implemented in Child Class')
 
     def report_error(self, msg, level, error_class):
         """ generate Error Report """
@@ -160,6 +150,11 @@ class Component():
         else:
             self.master.stw.show_message(msg, level)
 
+    def is_defined(self):
+        """ Checks if Component is defined """
+        rslt, msg = self.check_arg_definition() 
+        return rslt
+                
     def check_definition(self):
         """ Check Component Definition and if rslt is False
             Report in status window if identified else raise a 
@@ -182,15 +177,10 @@ class Component():
             self.perform_unique_updates(attrb, val)
             for itm in self.used_in:
                 itm.update_attributes()
-
-        
         
     def perform_unique_updates(self, attrib, val):
         """ Unique to each Component """
-        """ Perform component unique updates """
         pass
-
-
             
     def __str__(self):
         """ Create a string containing Component Description """

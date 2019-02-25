@@ -3,6 +3,7 @@
 """
 Created on Fri Jun  8 14:42:27 2018
 Modified on 11/27/2018 to Clean up Comments
+Modified on 02/22/2019 for version 0.1.0
 @author: Bob Hentz
 -------------------------------------------------------------------------------
   Name:        SPVSwbDisplay.py
@@ -29,8 +30,7 @@ class spvSwitchboard(tbf.switchboard):
         self.dsply = None
         self.frm = None
         tbf.switchboard.__init__(self, prj, location, parent, menuTitle)
-        
-        
+               
     def define_menu(self):
         """ Method to set specific menu options """
         """ self_actions  is a list of tuples defining each menu item 
@@ -40,10 +40,12 @@ class spvSwitchboard(tbf.switchboard):
                 command:      directing the action when button is clicked"""    
         self.actions = [('Define Project Overview', 'Project', self.dsplySum),
                        ('Define Energy Load', 'Load', self.dsplyLoad),
+                       ('Specify Solar Panel', 'Panel', self.dsplyPnls),
+                       ('Define Primary Solar Array', 'Array', self.dsplyAry),
+                       ('Define Alternate Solar Array', 'Alt Array', self.dsplyAltAry),
                        ('Specify Battery ', 'Battery', self.dsplyBats),
                        ('Define Battery Bank', 'Bank', self.dsplyBnk),
-                       ('Specify Solar Panel', 'Panel', self.dsplyPnls),
-                       ('Define Solar Array', 'Array', self.dsplyAry),
+                       ('Define Charge Controller', 'ChgCnt', self.dsplyChg),
                        ('Specify Inverter', 'Inverter', self.dsplyInvtrs),
                        ('Perform System Analysis', 'Analyze', self.runSim)]
 
@@ -72,10 +74,20 @@ class spvSwitchboard(tbf.switchboard):
         self.define_toplevel('Solar Array')
         self.frm = self.src.ary.display_input_form(self.dsply)
         
+    def dsplyAltAry(self):
+        """ Display the Alternate Solar Array Description Input Form """
+        self.define_toplevel('Secondary Solar Array')
+        self.frm = self.src.sec_ary.display_input_form(self.dsply)
+
     def dsplyPnls(self):
         """ Display Solar Panel Description Input Form """
         self.define_toplevel( 'Solar Panel')
         self.frm = self.src.pnl.display_input_form(self.dsply)
+
+    def dsplyChg(self):
+        """ Display Charge Controller Description Input Form """
+        self.define_toplevel( 'Charge Controller')
+        self.frm = self.src.chgc.display_input_form(self.dsply)
 
     def dsplyInvtrs(self):
         """ Display Inverter Description Input Form """
@@ -99,8 +111,7 @@ class spvSwitchboard(tbf.switchboard):
         self.dsply = Toplevel()
         self.dsply.title('Define {0} Parameters'.format(func))
         self.dsply.protocol('WM_DELETE_WINDOW', self.on_close)
-        
-        
+               
 
 def main():    
     root = Tk()

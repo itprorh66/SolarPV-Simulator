@@ -3,10 +3,10 @@
 """
 Created on Wed May  2 13:57:09 2018
 Modified   Wed Dec  5 2018 - Update for Issue #2 DC loads
+modified   Thu Dec 13 2018 (Issue #5)
+Modified on 02/22/2019 for version 0.1.0
 
 @author: Bob Hentz
-
-
 -------------------------------------------------------------------------------
   Name:        Parameters.py
   Purpose:     Declare Standardized System Parameters
@@ -102,8 +102,8 @@ battery_types = {'FLA':('Flooded Lead Acid', 0.90),
                  'AGM':('Sealed Absorbed Glass Mat Lead-Acid', 0.94)
         }
 
-
-
+# Define Charge Controler Types
+chgcntl_types = {'PWM':'Pulse Width Modulated', 'MPPT':'Max Power Point'}
 
 def main():
 	pass

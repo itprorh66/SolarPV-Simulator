@@ -3,6 +3,7 @@
 """
 Created   on Mon Jul 30 11:01:58 2018
 Modified  on Mon Sep 17 19:33:02 2018
+Modified on 02/22/2019 for version 0.1.0
 
 @author: Bob Hentz
 
@@ -68,17 +69,17 @@ class PVBattery(Component):
                       borderwidth= 5, relief= GROOVE, padx= 10, pady= 10, ipadx= 5, ipady= 5)
         return self.form
             
-
+    def perform_unique_updates(self, attrib, val):
+        """ No unique Updates required """
+        pass
+    
+    
 class BatteryForm(DataForm):
     def __init__(self, parent_frame, data_src, **kargs):
         DataForm.__init__(self, parent_frame, data_src, **kargs)
 
     def define_layout(self):
         self.wdg_dict = {
-#                'header': self.create_text(row= 0, column= 5, 
-#                                           text= "Battery Definition Form",
-#                                           justify= CENTER, columnspan= 10,
-#                                           sticky= (EW)),
                 'blank1': self.create_space(40, row= 1, column= 0, sticky=(EW),
                                            columnspan= 10),               
                 'lbl_mfg':self.create_label(self.src.get_attrb('b_mfg'),

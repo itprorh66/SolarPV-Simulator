@@ -4,6 +4,8 @@
 Created on Mon Jun  4 19:17:27 2018
 Modified   Sat Dec  1 2018 (fix save/import issue)
 Modified   Tue Dec  4 2018 (fix Load Import Error Issue #11)
+Modified on 02/22/2019 for version 0.1.0
+
 
 @author: Bob Hentz
 
@@ -34,7 +36,7 @@ class DataFrame:
 
     def add_new_row(self, rw_vals):
         """ Add new row to DataFrame and coerce entries to correct type """
-        assert len(rw_vals) == len(self.col_hds)
+        assert len(rw_vals) == len(self.col_hds), 'Len rw_vals = {0}, Len Col Hds = {1}'.format(len(rw_vals), len(self.col_hds))
         ind = dict()
         for itm in enumerate(self.col_hds):
             if rw_vals[itm[0]] is None or rw_vals[itm[0]] is "":
@@ -43,6 +45,11 @@ class DataFrame:
                 ind[itm[1]] = self.col_typs[itm[0]](rw_vals[itm[0]])
         self.df = self.df.append(ind, True)
 
+    def delete_row(self, rwid):
+        """ Delete a row from the dataframe """
+        assert rwid < self.df.shape[0]
+        self.df.drop(self.df.index[rwid])
+        
     def set_cell_value(self, pos, val):
         """ Update a DataFrame cell value pos = [row,col]  """
         sh = self.df.shape

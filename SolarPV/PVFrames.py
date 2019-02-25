@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sat Jul 21 13:28:32 2018
+Modified on 02/22/2019 for version 0.1.0
+
 
 @author: Bob Hentz
 
@@ -299,12 +301,6 @@ class moddata(tbf.data_entry_frame):
                        self.src['SIP'],'Data Entry',
                        location= [1,2], size= 5)
         
-#        self.frame_dict['SUP'] = tbf.entry_form_frame(self.parent,
-#                       self.src['SUP'],'Data Entry',
-#                       location= [1,2], size= 8)
-        
-#        ttk.Frame(self, padding= '0.5i').grid(row = 2, column= 0, sticky= (E, W)) 
-        
         self.frame_dict['m_mfg'] = tbf.entry_form_frame(self.parent,
                        self.src['m_mfg'],'List Entry',
                        validate_command= self.on_mfg_set,
@@ -348,21 +344,7 @@ class moddata(tbf.data_entry_frame):
      
         ttk.Frame(self, padding= '0.8i').grid(row = 9, column= 0, sticky= (E, W)) 
         
-    
-#        self.frame_dict['Height'] = tbf.entry_form_frame(self.parent,
-#                       self.src['Height'],'Data Entry',
-#                       location= [9,0], size= 8)
-#        self.frame_dict['Length'] = tbf.entry_form_frame(self.parent,
-#                       self.src['Length'],'Data Entry',
-#                       location= [9,1], size= 8)
-#        self.frame_dict['Width'] = tbf.entry_form_frame(self.parent,
-#                       self.src['Width'],'Data Entry',
-#                       location= [9,2], size= 8)
-#     
-#        self.frame_dict['Weight'] = tbf.entry_form_frame(self.parent,
-#                       self.src['Weight'],'Data Entry',
-#                       location= [9,0], size= 5)
-        
+            
     def on_mfg_set(self, val):
         """ Triggered by a Manufacturer Validation Event """
         self.src['m_mfg'].write_data(val)
@@ -414,7 +396,6 @@ class moddata(tbf.data_entry_frame):
             return True
             
     def on_albedo_change(self, val):
-        print('detecting albedo change')
         pass
         
 class invdata(tbf.data_entry_frame):
@@ -488,12 +469,6 @@ class invdata(tbf.data_entry_frame):
         mfg = osrc['Manufacturer']  == self.src['i_mfg'].read_data()
         mdl = osrc['Model']  == self.src['i_mdl'].read_data()
         mdf = osrc[mfg & mdl]
-#        lst = self.src['i_mdl'].get_option_source()
-
-#        print('Selection list', lst)
-#        osrc = self.src['i_mdl'].get_list()
-#        mdf = osrc[osrc['Manufacturer'].isin([self.src['i_mfg'].read_data()]) & osrc['Model'].isin(lst)]            
-#        
         print(len(mdf))
         if len(mdf) == 1:
             print('Inverter mdf = 1\n', mdf.head())

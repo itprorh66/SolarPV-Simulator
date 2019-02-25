@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Apr 26 19:11:58 2018
+Modified on 02/22/2019 for version 0.1.0
 
 @author: Bob Hentz
 
@@ -57,8 +58,6 @@ def getLocationData(dtin):
     for itm in dtin[stpt+len(schval):ndpt].rstrip().split(','):
         ln.append(float(itm.strip('\n ')))
     return ln
-
-
 
 def getOperationsdata(dtin, prm):
     """ Retrieves the NASA Location Atmospheric data for parameter 'parm'
@@ -162,15 +161,18 @@ def LoadNasaData(lat, lon, show= False, selectparms= None):
     locSel = 'lat={0}&lon={1}&user=anonymous'.format(lat, lon)
     cmd = baseURL + baseReq + reqparms + dateSel + outSel + locSel
     # Request NASA Data from API
-    data = requests.get(cmd).text
-#    info_dict['Location'] = getLocationData(data)
+    data = None
+    try:
+        data = requests.get(cmd).text
+    except requests.exceptions.ConnectionError:
+        print('Data Retrieval Error')
     if show:
         print ('Data for Location', info_dict['Location'])
-    for p in parms:
-        info_dict[p[0]] = getOperationsdata(data, p[0])
-        if show:
-            graphData(info_dict[p[0]], p)
-            
+    if data is not None:
+        for p in parms:
+            info_dict[p[0]] = getOperationsdata(data, p[0])
+            if show:
+                graphData(info_dict[p[0]], p)         
     return info_dict
     
 
@@ -191,8 +193,6 @@ def main():
         sw = '\tAvg WS: {0:.2f}\tMax WS: {1:.2f}\tMin WSp: {2:.2f}'.format(wav[i], wmx[i], wmn[i])
         st += sw
         print(st)
-
-#    print (getSiteElevation(36.0, 45.0)[2])    
 
 
 if __name__ == '__main__':

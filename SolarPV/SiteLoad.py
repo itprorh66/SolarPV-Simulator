@@ -4,6 +4,7 @@
 Created on Wed May  2 13:15:35 2018
 Modified   Sat Dec  1 2018 (fix save/import issue)
 Modified   Wed Dec  5 2018 (Fix Issue 2, Handle DC Loads)
+Modified on 02/22/2019 for version 0.1.0
 
 @author: Bob Hentz
 
@@ -45,12 +46,12 @@ class SiteLoad(DataFrame):
         DataFrame.__init__(self,   sp.load_fields, sp.load_field_types)
 
 
-    def addRow(self, typ, qty=None, uf=None, hrs=None, st=0, wts=None, src=None):
+    def addRow(self, typ, qty=None, uf=None, hrs=None, st=0, wts=None, src=None, mde=None):
         """ Create a new entry in the load array from individual items """
         ar = [typ, qty, uf, hrs, st, wts, src, mde]
+        print (ar)
         self.add_new_row(ar)
-
-
+        
     def setStdRowValues(self, ar):
         """ Update AR based on change of Load Type """
         if ar[0] is not '':
@@ -70,8 +71,13 @@ class SiteLoad(DataFrame):
         return ret
 
     def get_daily_load(self):
+        """ Return the total electrical load for a day """
         return sum(self.get_load_profile()['Total'])
-
+    
+    def get_demand_hours(self):
+        elp = self.get_load_profile()
+        return len(elp.loc[elp['Total'] > 0])
+        
     def get_load_profile(self):
         """ Return a Dataframe of hourly usage by AC, DC and Total Power
             for the given load over a 24 hour period """
@@ -113,26 +119,25 @@ class SiteLoad(DataFrame):
     def show_load_profile(self, window):
         """ Build & display the load profile graphic """
         elp = self.get_load_profile()
-        pls = 'Peak Hourly Load KW: Total= {0:4.2f},\tAC= {1:4.2f},\tDC= {2:4.2f}'
-        pl = pls.format(max(elp['Total'])/1000, (max(elp['AC']))/1000, 
-                        (max(elp['DC']))/1000)
-        tdls = 'Daily Load KW: Total= {0:4.2f},\tAC= {1:4.2f},\tDC= {2:4.2f}'
-        tdl = tdls.format(sum(elp['Total'])/1000, sum(elp['AC'])/1000, 
-                          sum(elp['DC'])/1000)
-#        mp = 0
-#        ypos = max(elp['Total'])
-#        while ypos > 10:
-#            mp += 1
-#            ypos = ypos//10
-#        adj = 10**(mp-1)
-        pltlist = [{'label': 'Load', 'data': np.array(elp['Total']),
-                        'type': 'Bar', 'color': 'grey', 'width': 0.4,
-                        'xaxis':np.array([x for x in range(24)])}]
-        dp = tbf.plot_graphic(window, 'Hour of Day', 'Watts',
-                              np.array([x for x in range(24)]),
-                    pltlist,'Hourly Electrical Use Profile', (6,4),
-                    text_inserts= [pl,tdl])
-
+        dmd_hrs = len(elp.loc[elp['Total'] > 0])
+        if dmd_hrs > 0:
+            pls = 'Peak Hourly Load KW: Total= {0:4.2f},\tAC= {1:4.2f},\tDC= {2:4.2f}'
+            pl = pls.format(max(elp['Total'])/1000, (max(elp['AC']))/1000, 
+                            (max(elp['DC']))/1000)
+            tdls = 'Daily Load KW:           Total= {0:4.2f},\tAC= {1:4.2f},\tDC= {2:4.2f}'
+            tdl = tdls.format(sum(elp['Total'])/1000, sum(elp['AC'])/1000, 
+                              sum(elp['DC'])/1000)
+            avhs = 'Avg Hourly Load KW:  Total= {0:4.2f},\tAC= {1:4.2f},\tDC= {2:4.2f}'
+            avhl = avhs.format(sum(elp['Total'])/(1000*dmd_hrs), 
+                               sum(elp['AC'])/(1000*dmd_hrs), 
+                               sum(elp['DC'])/(1000*dmd_hrs))
+            pltlist = [{'label': 'Load', 'data': np.array(elp['Total']),
+                            'type': 'Bar', 'color': 'grey', 'width': 0.4,
+                            'xaxis':np.array([x for x in range(24)])}]
+            dp = tbf.plot_graphic(window, 'Hour of Day', 'Watts',
+                                  np.array([x for x in range(24)]),
+                        pltlist,'Hourly Electrical Use Profile', (6,4),
+                        text_inserts= [pl,tdl,avhl])
 
     def report_error(self, msg, level, error_class):
         """ Generate Error Report """
@@ -145,6 +150,7 @@ class SiteLoad(DataFrame):
             self.master.stw.show_message(msg, level)
 
     def check_arg_definition(self):
+        """ Verify the load is defined """
         elp = self.get_load_profile()
         if sum(elp['Total']) == 0.0:
             return False, 'Electrical Load is unspecified'
@@ -166,15 +172,7 @@ def main():
     sl.add_new_row(['Light, Halogen', 10, 0.95, 5, 18, 35.0, 'AC'])
     sl.add_new_row(['Well Pump DC, 1 HP', 1, 0.35, 12, 8, 500.0, 'DC'])
     sl.add_new_row(['Phone Charger', 10, 0.45, 12, 6, 2.0, 'DC'])
-#    sl.add_new_row(['Refrigerator', 2, 0.25, 24, 0 , 200.0])
-#    sl2.add_new_row(['TV', 3, 0.9, 5, 16, 100.0])
-#    sl.add_new_row(['Well Pump', 1, 0.3, 24, 0, 300.0])
-#    sl.add_new_row(['Stereo', 2, 0.25, 6, 14, 35.0])
     elp = sl.get_load_profile()
-#        ld = pd.DataFrame(elp, columns=['Load'])
-#        ld.plot( kind= 'Bar', title= 'Watts per Daily Hour', legend= False)
-#        plt.show
-
     print(sl.get_dataframe())
 
 

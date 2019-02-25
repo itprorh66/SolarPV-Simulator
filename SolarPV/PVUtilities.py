@@ -4,6 +4,7 @@
 Created on Fri May 11 09:37:49 2018
 Modified on 11/27/2018 to clean up comments
 Modified   Wed Dec  5 2018 (Fix Issue 2, Handle DC Loads)
+Modified on 02/25/2019 for version 0.1.0
 
 @author: Bob Hentz
 -------------------------------------------------------------------------------
@@ -27,7 +28,7 @@ import requests
 import csv
 from urllib.request import urlopen
 from pvlib.irradiance import total_irrad
-
+from datetime import date, datetime
 
 def dfcell_is_empty(cell_value):
     """ Return True if Dataframe cell contains NaN """
@@ -97,6 +98,28 @@ def dom_timestamp(ts):
         k.append(dom)
     return np.array(k)
 
+def create_time_indices(tm_z):
+    """ Create Base Dataframe indicies for use in running simulations """
+    now = date.today()
+    baseyear = now.year-2
+    if baseyear%4 == 0:
+        # Don't use leap year
+        baseyear -= 1
+    st = '{0}0101T0000{1:+}'.format(baseyear, tm_z)
+    nt = '{0}1231T2300{1:+}'.format(baseyear, tm_z)
+    times = pd.date_range(start= st,
+                             end= nt,
+                             freq='H')
+
+    months = month_timestamp(times).astype(int)
+    days_of_year = doy_timestamp(times).astype(int)
+    days_of_month = dom_timestamp(times).astype(int)
+    timedf = pd.DataFrame({'Month':months,
+                             'DayofYear': days_of_year,
+                             'DayofMonth': days_of_month},
+                        index = times)
+
+    return timedf
 
 def hourly_load(times, load):
     """ Create a Data Frame of Hourly Load in Watts"""
@@ -108,27 +131,7 @@ def hourly_load(times, load):
         hlc[i, 2] = load['Total'].iloc[i%24]
     return pd.DataFrame(data=hlc, index=times, 
                         columns=['AC_Load', 'DC_Load', 'Total_Load'])
-
-def create_time_mask(time_val, adjust=None):
-    """ Create a Pandas Timestamp defined by
-        time_val, Adjust to nearest hour beased on value of adjust.
-    """
-    strMask= '{0}-{1:02}-{2:02} {3:02}:00:00{4:+03}'
-    rslt = [time_val.year, time_val.month, 
-            time_val.day, time_val.hour, 
-            int(str(time_val.utcoffset()).split(':')[0])]    
-    if adjust is not None:
-        mn = time_val.minute
-        if adjust == "Lead":
-            if mn > 30:
-                rslt[3] += 1
-        else:
-            if mn < 30:
-                rslt[3] -= 1
-    rstr = strMask.format(rslt[0], rslt[1], rslt[2], rslt[3], rslt[4])
-    return pd.to_datetime(rstr)                
-        
-        
+                
 def hourly_temp(avT, maxT, minT, cur_t, rise_t, set_t, trans_t, offset= 2):
     """ Estimate hourly temperature for cur_t of day
         assumes, temp follows sine curve, with max temp at
@@ -153,8 +156,7 @@ def hourly_speed(avS, maxS, minS, cur_t, rise_t, set_t, trans_t, offset= 2):
     pkhr = sunrise + 0.5*dur + offset
     d_spd = (maxS - minS) 
     return abs(avS - d_spd*math.sin(2*np.pi*(ct-pkhr)/24))
-   
-    
+       
 def read_resource(filename, dirptr):
     """ Method to retrieve data from the resources csv file and generate a 
         Panadas Dataframe of the contents """
@@ -173,71 +175,62 @@ def read_web_resource(url, dirptr, filename):
     except requests.exceptions.ConnectionError:
         return False
 
-def build_monthly_performance_info(df, parm):
-    dom = [None]*13
-    curday = 0
-    for ri in range(len(df)):
-        row = df.iloc[ri]
-        val = row[parm]
-        mn = int(row['Month'])
-        dm = int(row['DayofMonth'])
-        if dom[mn] is None:
-            dom[mn] = [mn, val]
-        else:
-            if len(dom[mn]) <= dm:
-                dom[mn].append(val)
-            else:
-                dom[mn][dm] += val
-    months = np.arange(1,13)
-    total = np.zeros(12)
-    avg = np.zeros(12)
-    bestday = np.zeros(12)
-    bestval = np.zeros(12)
-    worstday = np.zeros(12)
-    worstval = np.zeros(12)
-    for i in range(len(months)):
-        bv = -1.0
-        wv = 100000000.0
-        m = months[i]
-        if dom[m] is not None:
-            curmon = dom[m]
-            days = len(dom[m][1:])
-            for day in range(1, days+1):
-                vals = dom[m]
-                curval = vals[day]
-                total[i] += curval
-                if curval < wv:
-                    worstval[i] = curval
-                    wv = curval
-                    worstday = day
-                if curval > bv:
-                    bestval[i] = curval
-                    bv = curval
-                    bestday = day
-            avg[i] = total[i]/(days*1.0)
-    df = pd.DataFrame({'Total Power':total, 'Avg Power':avg, 
-                       'Best Power':bestval, 'Best Day': bestday, 
-                       'Worst Power':worstval, 'Worst Day': worstday},
-                       index= months) 
-    df.index.name = 'Month'
-    return df
-   
-def find_worst_day(df):
-    """ return the worst performance day from the timestamp indexed dataframe """
-    min_power = np.min(np.array(df['Worst Power']))
-    minP_day = df[df['Worst Power'] == min_power]
-    dom = minP_day['Worst Day'].values[0].astype(int)
-    mnth = minP_day.index.values[0].astype(int)
-    return mnth, dom
-    
+def build_monthly_summary(df, select_value):
+    """ Summarizes df contents for select_value parameter
+        over an entire year """    
+    month_list = np.array(['Jan', 'Feb', 'Mar', 'Apr',
+                           'May', 'Jun', 'Jul', 'Aug',
+                           'Sep', 'Oct', 'Nov', 'Dec'])
+    dat_list = np.zeros([12,5])
+    for indx in range(12):
+        smpl_df = df.loc[df['Month'] == indx+1]
+        vals = smpl_df[select_value].groupby(smpl_df['DayofMonth']).sum()
+        dat_list[indx][0] = vals.sum()
+        dat_list[indx][1] = vals.mean()
+        dat_list[indx][2] = vals.max()
+        dat_list[indx][3] = vals.min()
+        dat_list[indx][4] = len(smpl_df)/24
+    rslt = pd.DataFrame(dat_list, month_list, 
+                        columns=['Total {0}'.format(select_value), 
+                                 'Avg {0}'.format(select_value), 
+                                 'Best {0}'.format(select_value), 
+                                 'Worst {0}'.format(select_value),
+                                 'Days' ])
+    rslt.index.name= 'Months'
+    return rslt
 
-def find_best_day(df):
-    """ return the best performance day from the timestamp indexed dataframe """
-    max_power = np.max(np.array(df['Best Power']))
-    maxP_day = df[df['Best Power'] == max_power]
-    dom = maxP_day['Best Day'].values[0].astype(int)
-    mnth = maxP_day.index.values[0].astype(int)
-    return mnth, dom
+
+def build_monthly_performance(df, param):
+    """ Using the dataframe df create Monthly Synopsis of
+        system performance  for selected param 
+        return 3 part tuple containing:
+            resulting array, 
+            best day designator,
+            worst day designator
+    """
+    rslt = []    
+    rslt.append( build_monthly_summary(df, param))
+    rslt.append( find_best_doy(df, param))
+    rslt.append( find_worst_doy(df, param))
+    return rslt
+
+def find_worst_doy(df, select_value):
+    """ returns a day_of_year where select_value is a minimum """
+    rslt_df = df[select_value].groupby(df['DayofYear']).sum()
+    mn = rslt_df.min()
+    for indx in range(len(rslt_df)):
+        if rslt_df.iloc[indx] == mn:
+            return indx + 1
+    raise IndexError('No worst day value found')
+    
+def find_best_doy(df, select_value):
+    """ returns a day_of_year where select_value is a maximum """
+    rslt_df = df[select_value].groupby(df['DayofYear']).sum()
+    mx = rslt_df.max()
+    for indx in range(len(rslt_df)):
+        if rslt_df.iloc[indx] == mx:
+            return indx + 1
+    raise IndexError('No best day value found')
     
 
 def build_overview_report(mdl):
@@ -255,69 +248,27 @@ def build_overview_report(mdl):
             mdl.site.read_attrb('lon'), 
             mdl.site.read_attrb('elev'))
     elp = mdl.load.get_load_profile()
-    sum_elp = sum(elp)
+    sum_elp = sum(elp['Total'])
     if sum_elp > 0:
-       s += '\n\n\tUser Load Description' 
-       s +='\n\t\tDaily Load = {0} KWatts\t Peak Hourly Load = {1} KWatts'.format(sum_elp/1000, max(elp)/1000)
-    
-    if mdl.bat.read_attrb('b_mfg') is not "":
-        s += '\n\n\tBattery Specification'
-        s += '\n\t\tMFG: {0},\t Model: {1}'.format( 
-                   mdl.bat.read_attrb('b_mfg'),
-                   mdl.bat.read_attrb('b_mdl'))
-        s += '\n\t\tDescription: {0}'.format( 
-                   mdl.bat.read_attrb('b_desc'))
-        s += '\n\t\tType: {0}, \tVnom: {1} volts, \tInternal Resistance: {2} Ohms'.format(
-                    mdl.bat.read_attrb('b_typ'),
-                    mdl.bat.read_attrb('b_nomv'),
-                    mdl.bat.read_attrb('b_ir'))
-        s += '\n\t\tRated Capacity: {0} Amp-Hrs,\tHour Basis for Rating: {1} Hrs'.format(
-                    mdl.bat.read_attrb('b_rcap'),
-                    mdl.bat.read_attrb('b_rhrs'))
-        s += '\n\t\tRated temperature: {0} C,\tTemp Coeficient: {1}/C'.format(
-                    mdl.bat.read_attrb('b_stdTemp'),
-                    mdl.bat.read_attrb('b_tmpc'))
-        s += '\n\t\tMax No. of Discharge Cycles: {0},\tDepth of Discharge for Lifecycle: {1}%'.format(
-                    mdl.bat.read_attrb('b_mxDschg'),
-                    mdl.bat.read_attrb('b_mxDoD'))
-        s += '\n\n\tBank Specification'
-        s += '\n\t\tDOA: {0}, \tDOD: {1}%'.format(
-                    mdl.bnk.read_attrb('doa'),
-                    mdl.bnk.read_attrb('doc'))
-        s += '\n\t\tUnits in Series: {0}, \tStrings in Parallel: {1}'.format(
-                    mdl.bnk.read_attrb('bnk_uis'),
-                    mdl.bnk.read_attrb('bnk_sip'))
-    if mdl.pnl.read_attrb('Name') is not '':
-        s += '\n\n\tSolar Panel Specification'
-        s += '\n\t\tMFG: {0},\t Model: {1}'.format( 
-                   mdl.pnl.read_attrb('m_mfg'),
-                   mdl.pnl.read_attrb('m_mdl'))
-        s += '\n\t\tDescription: {0}'.format( 
-                   mdl.pnl.read_attrb('Name'))
-        s += '\n\t\tType: {0}, \tV(mp): {1} volts, \tI(mp): {2} Amps'.format(
-                    mdl.pnl.read_attrb('Technology'),
-                    mdl.pnl.read_attrb('V_mp_ref'),
-                    mdl.pnl.read_attrb('I_mp_ref'))
-        s += '\n\n\tSolar Array Specification'
-        s += '\n\t\tTilt: {0} Degrees, \tAzimuth: {1} Degrees'.format(
-                    mdl.ary.read_attrb('tilt'),
-                    mdl.ary.read_attrb('azimuth'))
-        s += '\n\t\tMounting Config: {0}'.format(mdl.ary.read_attrb('mtg_cnfg'))
+       s += '\n\n\tUser Load Description\n'
+       pls = '\nPeak Hourly Load KW: Total= {0:4.2f},\tAC= {1:4.2f},\tDC= {2:4.2f}'
+       s += pls.format(max(elp['Total'])/1000, max(elp['AC'])/1000, 
+                            max(elp['DC'])/1000)
+    if mdl.pnl.is_defined():
+        for i in range(len(mdl.array_list)):
+            if mdl.array_list[i].is_defined():
+                s += '\nArray {0}\n'.format(i+1)
+                s += '\t' + str(mdl.array_list[i])
 
-        s += '\n\t\tSpace under Panel: {0} cm, \tMounting Height: {1} m'.format(
-                    mdl.ary.read_attrb('mtg_spc'),
-                    mdl.ary.read_attrb('mtg_hgt'))
-        s += '\n\t\tGround Surface Condition: {0}'.format(mdl.ary.read_attrb('gnd_cnd'))
-        s += '\n\t\tUnits in Series: {0}, \tStrings in Parallel: {1}'.format(
-                    mdl.ary.read_attrb('uis'),
-                    mdl.ary.read_attrb('sip'))
-    if mdl.inv.read_attrb('Name') is not '':
-        s += '\n\n\tInverter Specification'
-        s += '\n\t\tMFG: {0},\t Model: {1}'.format( 
-                   mdl.inv.read_attrb('i_mfg'),
-                   mdl.inv.read_attrb('i_mdl'))
-        s += '\n\t\tDescription: {0}'.format( 
-                   mdl.inv.read_attrb('Name'))        
+    if mdl.bat.is_defined():
+        s += '\n\n\t' + str(mdl.bnk)
+  
+    if mdl.chgc.is_defined():
+        s += '\n\n\t' + str(mdl.chgc)
+
+    if mdl.inv.is_defined():
+        s += '\n\n\t' + str(mdl.inv)
+
     return s
 
           

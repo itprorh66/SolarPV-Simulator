@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Jul 10 11:07:02 2018
+Modified on 02/22/2019 for version 0.1.0
 
 @author: Bob Hentz
 
@@ -174,21 +175,10 @@ class plot_graphic(ttk.Frame):
     def on_click(self, event):
         print('Detected Button Release', event)
             
-#    def insert_plot(self, xdata, ydata, plot_type, pltcolor):
-#        self.fig.insert_plot(xdata, ydata, plot_type, pltcolor)
                
     def close_graphic(self):
         self.destroy()
-        
-#class plot_dataframe(ttk.Frame):
-#    def __init__(self, .parent_frame, dataframe, xaxis, yaxis, pltsize, text_inserts,
-#                 pltype= None):
-#        self.parent = parent_frame
-#        ttk.Frame.__init__(self, self.parent)
-#        self.grid(row= 0, column= 0, sticky = "NWES", padx=5, pady=5)
-        
-        
-        
+                
 class list_cell(ttk.Combobox):
     """ Creates an Option List Field widget for gathering & updating source data """
     def __init__(self, parent_frame, data_src, min_lngth, location= None,
@@ -399,52 +389,7 @@ class status_window(LabelFrame):
         self.lbl.grid(row= 0, column=0)
         self.parent.update_idletasks()
 
-class data_entry_frame(ttk.Frame):
-    """ Creates a Data Entry form used to load data by the user """
-    def __init__(self, parent_frame, data_src, location = None, show_actions = None):
-        self.parent = parent_frame
-        self.src = data_src
-        self.loc = [0,0]
-        self.frame_dict = dict()
-        self.title = 'Define Component Characteristics'
-        if location is not None:
-            self.loc = location        
-        self.shw_acts = False
-        if show_actions != None:
-            self.shw_acts = show_actions
-        ttk.LabelFrame.__init__(self, self.parent, text=self.title, borderwidth= 5, padding= 5,
-                           relief= GROOVE)
-        self.grid(row = self.loc[0], column = self.loc[1], sticky = (N, W, E, S))
-        self.make_frames()
-        # Display Action Buttons when necessary
-        self.insert_actions()
- 
-    def on_frame_close(self):
-        """ Update all fields to ensure clean up is completed """
-        for key in self.frame_dict.keys():
-            self.src[key].write_data(self.frame_dict[key].get_val())
-        self.on_local_frame_close()
-               
-    def make_frames(self):
-        """ Generates frames for record display """
-        """ Method to be over-ridden by specific class instance """
-        pass
 
-    def insert_actions(self):
-       """ Implement actions unique to Frame Record if required"""
-       if self.shw_acts:
-           self.local_actions()
-
-    def local_actions(self):
-        """ Method inserts frame actions """
-        """ Method to be over-ridden by specific class instance """
-        pass
-
-    def on_local_frame_close(self):
-        """ Method invoked before frame closure to implement frame unique actions"""
-        """ Method to be over-ridden by specific class instance """
-        pass
-  
 class switchboard(ttk.LabelFrame):
     """ Creates a Menu for use in managing application administration"""
     def __init__(self, src, location = None, parent=None,  menuTitle = None):
@@ -505,11 +450,6 @@ class switchboard(ttk.LabelFrame):
 def main():
     pass
         
-    
-    
-    
-    
-    
     
 if __name__ == '__main__':
     main()

@@ -3,6 +3,8 @@
 """
 Created on Sun Sep 30 11:10:12 2018
 Modified on 11/27/2018 to clean up comments
+Modified on 02/22/2019 for version 0.1.0
+
 @author: Bob Hentz
 -------------------------------------------------------------------------------
   Name:        PVSite.py
@@ -21,7 +23,8 @@ from Component import *
 from NasaData import getSiteElevation, LoadNasaData
 from FormBuilder import *
 from pvlib.location import Location
-from pvlib.solarposition import get_sun_rise_set_transit
+#from pvlib.solarposition import get_sun_rise_set_transit
+from pvlib.solarposition import sun_rise_set_transit_spa
 from DataFrame import *
 
 class PVSite(Component):
@@ -111,10 +114,13 @@ class PVSite(Component):
 
     def _Lentry_valid(self, val):
         """ Tests for valid Lat/Lon entries & not equal to 0.0 """
-        x = float(val)
-        if x != 0.0 and x <= 180.0 and x >= -180.0:
-            return True
-        return False
+        try:
+            x = float(val)
+            if x != 0.0 and x <= 180.0 and x >= -180.0:
+                return True
+            return False
+        except:
+            return False
 
 #TODO Implement retrieve elevation data functionality when focusin and elev cell is 0.0
     def retrieve_elevation(self, lat, lon):
@@ -169,7 +175,9 @@ class PVSite(Component):
         if self.suntimes is None:
             lt = self.read_attrb('lat')
             ln = self.read_attrb('lon')
-            st = get_sun_rise_set_transit(times, lt, ln)
+#            st = get_sun_rise_set_transit(times, lt, ln)
+            st = sun_rise_set_transit_spa(times, lt, ln,
+                                 how='numpy', delta_t=67.0, numthreads=4)
             sunup = []
             sundwn = []
             transit = []
@@ -196,16 +204,17 @@ class PVSite(Component):
             self.atmospherics = popup_notification(stat_win, 
                         'Retrieving Atmospheric Data, Please Wait', 
                         LoadNasaData, lt,ln)
-            if self.atmospherics is None:
+            if len(self.atmospherics) == 0:
                 wm = 'Failed to load Atmospheric data, using fixed temp and wind speed'
                 stat_win.show_message(wm, 'Warning')
                 self.air_temp = PVSite.default_temp
                 self.wind_spd = PVSite.default_wind_spd                
-        if self.air_temp is None and self.wind_spd is None:
+        if self.air_temp is None and self.wind_spd is None and self.atmospherics is not None:
             # Build Arrays of Temps & Wind Speed by Hour            
             temp =np.zeros([len(times)])
             speed = np.zeros(len(times))
-            sunlight = get_sun_rise_set_transit(times, lt, ln)
+            sunlight = sun_rise_set_transit_spa(times, lt, ln,
+                                 how='numpy', delta_t=67.0, numthreads=4)
             sunindx = list(sunlight.index.values)
             avt = self.atmospherics['T10M']['S-Mean'].values
             mxt = self.atmospherics['T10M_MAX']['S-Mean'].values

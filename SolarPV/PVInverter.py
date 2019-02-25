@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Oct  4 17:37:01 2018
+Modified on 02/22/2019 for version 0.1.0
+
 
 @author: Bob Hentz
 
@@ -51,18 +53,24 @@ class PVInverter(Component):
 
 
     def check_arg_definition(self):
-        """ Check Panel definition """
+        """ Check Inverter definition """
         if self.read_attrb('i_mfg') == "" or self.read_attrb('i_mdl') == '':
             return False, 'PV Inverter is undefined'
         if self.read_attrb('Paco') < self.master.site.read_attrb('gv'):
             return False, 'Inverter Output less than Grid Voltage'
-        if self.read_attrb('Vdcmax') < self.master.bnk.read_attrb('bnk_vo'):
-            return False, 'Bank Voltage exceeds Inverter Input Max'
-        if self.read_attrb('Vdcmax')* 1.5 < self.master.ary.read_attrb('ary_Vmp'):
-            return False, 'Array Voltage exceeds Inverter Input Max'       
         return True, ''
 
 
+    def compute_dc_power(self, ac_load):
+        """ Given an required AC_Load, return required input DC
+             Power required by Inverter"""
+        paco = self.read_attrb('Paco')
+        pdco = self.read_attrb('Pdco')
+        ie_ref = 0.9637
+        if ac_load > 0:
+            return (1+ ac_load*((pdco - paco)/paco))/ie_ref
+        return 0.0
+    
     def validate_mfg_setting(self):        
         """ Triggered by a mfg field validation event
             Updates Model list based on  mfg selection """
@@ -109,18 +117,16 @@ class PVInverter(Component):
                     self.form.wdg_dict[ky].set_val()
         return True
 
-
     def display_input_form(self, parent_frame):
+        """ Generate the data entry form """
         self.parent_frame = parent_frame
         self.form = InverterForm(parent_frame, self, row=1, column=1,  width= 300, height= 300,
                       borderwidth= 5, relief= GROOVE, padx= 10, pady= 10, ipadx= 5, ipady= 5)
         return self.form
 
-
 class InverterForm(DataForm):
     def __init__(self, parent_frame, data_src, **kargs):
         DataForm.__init__(self, parent_frame, data_src, **kargs)
-
 
     def define_layout(self):
         self.wdg_dict = {
@@ -135,7 +141,6 @@ class InverterForm(DataForm):
                                            width= 45, justify= CENTER, columnspan= 5,
                                            validate= 'focusout',
                                            validatecommand= self.src.validate_mfg_setting),
-    #            'spc22': self.create_space(20, row= 2, column= 3, sticky= (EW)),
                 'lbl_mdl': self.create_label(self.src.get_attrb('i_mdl'),
                                             row= 3, column= 0, justify= RIGHT, 
                                             columnspan = 3),
@@ -176,7 +181,6 @@ class InverterForm(DataForm):
                'lbl_pdco': self.create_label(self.src.get_attrb('Pdco'),
                                              row= 6, column= 4, justify= RIGHT,
                                             sticky= (EW), columnspan = 2),
-#               'spc62': self.create_space(2, row= 6, column= 5, sticky= (EW)),
                 'Pdco': self.create_entry(self.src.get_attrb('Pdco'),
                                              row= 6, column= 6, justify= CENTER,
                                             sticky= (EW), width= 10),
@@ -197,7 +201,6 @@ class InverterForm(DataForm):
                'lbl_vdc': self.create_label(self.src.get_attrb('Vdco'),
                                              row= 7, column= 4, justify= RIGHT,
                                             sticky= (EW), columnspan = 2),
-#               'spc62': self.create_space(2, row= 6, column= 5, sticky= (EW)),
                'Vdco': self.create_entry(self.src.get_attrb('Vdco'),
                                              row= 7, column= 6, justify= CENTER,
                                             sticky= (EW), width= 10),
@@ -216,7 +219,6 @@ class InverterForm(DataForm):
                'lbl_mplow': self.create_label(self.src.get_attrb('Mppt_low'),
                                              row= 9, column= 0, justify= RIGHT,
                                             sticky= (EW), columnspan = 2),
-#               'spc62': self.create_space(2, row= 6, column= 5, sticky= (EW)),
                 'Mppt_low': self.create_entry(self.src.get_attrb('Mppt_low'),
                                              row= 9, column= 2, justify= CENTER,
                                             sticky= (EW), width= 10),
