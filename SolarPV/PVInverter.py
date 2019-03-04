@@ -3,6 +3,7 @@
 """
 Created on Thu Oct  4 17:37:01 2018
 Modified on 02/22/2019 for version 0.1.0
+Modified on 3/4/2019 for issue #18
 
 
 @author: Bob Hentz
@@ -34,7 +35,7 @@ class PVInverter(Component):
     def _define_attrbs(self):
         self.args = {
                  'i_mfg':option_field('m_mfg', 'Manufactuerer:', '',
-                                    sorted(list(set(self.master.inverters['Manufacturer']))), 
+                                    sorted(list(set(self.master.inverters['Manufacturer']))),
                                     self.master.inverters),
                  'i_mdl':option_field('m_mdl', 'Model:', '',
                                     sorted(list(set(self.master.inverters['Model']))),
@@ -70,8 +71,8 @@ class PVInverter(Component):
         if ac_load > 0:
             return (1+ ac_load*((pdco - paco)/paco))/ie_ref
         return 0.0
-    
-    def validate_mfg_setting(self):        
+
+    def validate_mfg_setting(self):
         """ Triggered by a mfg field validation event
             Updates Model list based on  mfg selection """
         val = self.form.wdg_dict['i_mfg'].get_val()
@@ -80,18 +81,18 @@ class PVInverter(Component):
         lst = list(filter(lambda x: x.startswith(val), nol))
 
         if val != "":
-            mdf = osrc[osrc['Manufacturer'].isin(lst)]
+            mdf = osrc[osrc['Manufacturer'].isin([self.args['i_mfg'].read_data()])]
             nol = sorted(list(set(mdf['Model'])))
             self.form.wdg_dict['i_mdl']['values']= nol
             self.args['i_mdl'].update_list(nol)
         else:
-            for ky in self.args.keys():                
+            for ky in self.args.keys():
                 self.args[ky].reset_value()
                 self.form.wdg_dict[ky].set_val()
                 self.form.wdg_dict['i_mdl']['values']= nol
                 self.args['i_mdl'].update_list(nol)
         return True
-   
+
     def validate_mdl_setting(self):
         """ Triggered by a model field validation event """
         val = self.form.wdg_dict['i_mdl'].get_val()
@@ -99,8 +100,8 @@ class PVInverter(Component):
         lst = list(filter(lambda x: x.startswith(val), sorted(list(set(osrc['Model'])))))
         if len(lst) == 1:
             mdf = (osrc[osrc['Manufacturer'].
-                           isin([self.form.wdg_dict['i_mfg'].get_val()]) & 
-                           osrc['Model'].isin(lst)])  
+                           isin([self.form.wdg_dict['i_mfg'].get_val()]) &
+                           osrc['Model'].isin(lst)])
             self.set_attribute('Name', mdf.index.values[0])
             self.form.wdg_dict['Name'].set_val()
             for ky in self.args.keys():
@@ -142,7 +143,7 @@ class InverterForm(DataForm):
                                            validate= 'focusout',
                                            validatecommand= self.src.validate_mfg_setting),
                 'lbl_mdl': self.create_label(self.src.get_attrb('i_mdl'),
-                                            row= 3, column= 0, justify= RIGHT, 
+                                            row= 3, column= 0, justify= RIGHT,
                                             columnspan = 3),
                 'spc31': self.create_space(2, row= 3, column= 5, sticky= (EW)),
                 'i_mdl': self.create_dropdown(self.src.get_attrb('i_mdl'),
@@ -215,7 +216,7 @@ class InverterForm(DataForm):
                                             sticky= (EW), columnspan = 2),
                 'Idcmax': self.create_entry(self.src.get_attrb('Idcmax'),
                                              row= 8, column= 6, justify= CENTER,
-                                            sticky= (EW), width= 10), 
+                                            sticky= (EW), width= 10),
                'lbl_mplow': self.create_label(self.src.get_attrb('Mppt_low'),
                                              row= 9, column= 0, justify= RIGHT,
                                             sticky= (EW), columnspan = 2),
@@ -241,6 +242,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-

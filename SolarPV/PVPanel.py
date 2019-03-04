@@ -3,6 +3,7 @@
 """
 Created on Tue Oct  2 12:40:59 2018
 Modified on 02/22/2019 for version 0.1.0
+Modified on 3/4/2019 for issue #18
 
 @author: Bob Hentz
 
@@ -33,7 +34,7 @@ class PVPanel(Component):
     def _define_attrbs(self):
         self.args = {
                  'm_mfg':option_field('m_mfg', 'Manufactuerer:', '',
-                                    sorted(list(set(self.master.modules['Manufacturer']))), 
+                                    sorted(list(set(self.master.modules['Manufacturer']))),
                                     self.master.modules),
                  'm_mdl':option_field('m_mdl', 'Model:', '',
                                     sorted(list(set(self.master.modules['Model']))),
@@ -64,11 +65,11 @@ class PVPanel(Component):
     def check_arg_definition(self):
         """ Check Panel definition """
         if self.read_attrb('m_mfg') == "" or self.read_attrb('m_mdl') == '':
-            return False, 'PV Panel is undefined'      
+            return False, 'PV Panel is undefined'
         return True, ''
 
 
-    def validate_mfg_setting(self):        
+    def validate_mfg_setting(self):
         """ Triggered by a mfg field validation event
             Updates Model list based on  mfg selection """
         val = self.form.wdg_dict['m_mfg'].get_val()
@@ -76,20 +77,19 @@ class PVPanel(Component):
         osrc = self.args['m_mfg'].get_option_source()
         nol =  sorted(list(set(osrc['Manufacturer'])))
         lst = list(filter(lambda x: x.startswith(val), nol))
-        print()
         if val != "":
-            mdf = osrc[osrc['Manufacturer'].isin(lst)]
+            mdf = osrc[osrc['Manufacturer'].isin([self.args['m_mfg'].read_data()])]
             nol = sorted(list(set(mdf['Model'])))
             self.form.wdg_dict['m_mdl']['values']= nol
             self.args['m_mdl'].update_list(nol)
         else:
-            for ky in self.args.keys():                
+            for ky in self.args.keys():
                 self.args[ky].reset_value()
                 self.form.wdg_dict[ky].set_val()
                 self.form.wdg_dict['m_mdl']['values']= nol
                 self.args['m_mdl'].update_list(nol)
         return True
-   
+
     def validate_mdl_setting(self):
         """ Triggered by a model field validation event """
         val = self.form.wdg_dict['m_mdl'].get_val()
@@ -98,8 +98,8 @@ class PVPanel(Component):
         lst = list(filter(lambda x: x.startswith(val), sorted(list(set(osrc['Model'])))))
         if len(lst) == 1:
             mdf = (osrc[osrc['Manufacturer'].
-                           isin([self.form.wdg_dict['m_mfg'].get_val()]) & 
-                           osrc['Model'].isin(lst)])  
+                           isin([self.form.wdg_dict['m_mfg'].get_val()]) &
+                           osrc['Model'].isin(lst)])
             self.set_attribute('Name', mdf.index.values[0])
             self.form.wdg_dict['Name'].set_val()
             for ky in self.args.keys():
@@ -124,7 +124,7 @@ class PVPanel(Component):
         return self.form
 
 
-#Define the data entry form for the Solar Panel 
+#Define the data entry form for the Solar Panel
 class PanelForm(DataForm):
     def __init__(self, parent_frame, data_src, **kargs):
         DataForm.__init__(self, parent_frame, data_src, **kargs)
@@ -144,7 +144,7 @@ class PanelForm(DataForm):
                                            validate= 'focusout',
                                            validatecommand= self.src.validate_mfg_setting),
                 'lbl_mdl': self.create_label(self.src.get_attrb('m_mdl'),
-                                            row= 3, column= 0, justify= RIGHT, 
+                                            row= 3, column= 0, justify= RIGHT,
                                             columnspan = 3),
                 'spc35': self.create_space(2, row= 3, column= 5, sticky= (EW)),
                 'm_mdl': self.create_dropdown(self.src.get_attrb('m_mdl'),
@@ -315,5 +315,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-

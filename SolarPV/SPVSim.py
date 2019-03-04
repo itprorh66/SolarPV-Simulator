@@ -6,6 +6,7 @@ Modified on 11/27/2018 to Clean up comments
 Modified on 12/01/2018 to resolve Save/Import Issue #1
 Modified 0n 12/04/2018 to resolve Import Load Error - Issue #11
 Modified on 02/25/2019 for version 0.1.0
+Modified on 3/4/2019 for Issue #19
 
 @author: Bob Hentz
 -------------------------------------------------------------------------------
@@ -105,7 +106,7 @@ class SPVSIM():
                                        {'Power Delivery':[
                                                ('Performance', self.show_pwr_performance),
                                                 ('Best Day',self.show_pwr_best_day ),
-                                                ('Worst Day', self.show_pwr_worst_day )]},                    
+                                                ('Worst Day', self.show_pwr_worst_day )]},
                                        {'Battery Performance':[
                                         ('Overview', self.bnk.show_bank_overview),
                                         ('Bank Drain', self.bnk.show_bank_drain),
@@ -193,7 +194,8 @@ class SPVSIM():
             fn = askopenfilename(parent= self.root, title= 'Load Project',
                                defaultextension= '.spv',
                                initialdir= self.mdldir)
-        if fn is not '':
+        if fn is not '' and type(fn) is not tuple:
+            print (fn)
             self.filename = fn
             self.read_file(fn)
 
@@ -205,7 +207,7 @@ class SPVSIM():
                                    defaultextension= '.spv',
                                    initialfile = self.filename,
                                    initialdir= self.mdldir)
-        if fn is not '':
+        if fn is not ''and type(fn) is not tuple:
             self.write_file(fn)
             self.filename = fn
 
@@ -214,7 +216,7 @@ class SPVSIM():
         sa.uses(self.pnl)
         return sa
 
-    #TODO Should combine_arrays move to PVUtilities        
+    #TODO Should combine_arrays move to PVUtilities
     def combine_arrays(self):
         """ Combine primary & secondary array outputs to from a unified output
             using individual array outputs to include the following:
@@ -233,17 +235,17 @@ class SPVSIM():
                 sarf  =  self.array_list[ar].is_defined()
                 if sarf:
                    sec_array = self.array_list[ar].define_array_performance(self.times.index,
-                                                    self.site, self.inv, self.stw)          
+                                                    self.site, self.inv, self.stw)
                    for rw in range(len(rslt)):
                        if rslt['ArrayPower'].iloc[rw] > 0 and sec_array['p_mp'].iloc[rw] >0:
                            v_out = min(rslt['ArrayVolts'].iloc[rw], sec_array['v_mp'].iloc[rw])
-                           i_out = (rslt['ArrayCurrent'].iloc[rw] * 
+                           i_out = (rslt['ArrayCurrent'].iloc[rw] *
                                     (v_out/rslt['ArrayVolts'].iloc[rw]) +
-                                    sec_array['i_mp'].iloc[rw]  * 
+                                    sec_array['i_mp'].iloc[rw]  *
                                     (v_out/sec_array['v_mp'].iloc[rw]))
                            rslt['ArrayVolts'].iloc[rw] = v_out
                            rslt['ArrayCurrent'].iloc[rw] = i_out
-                           rslt['ArrayPower'].iloc[rw] = v_out * i_out                                                         
+                           rslt['ArrayPower'].iloc[rw] = v_out * i_out
                        elif sec_array['p_mp'].iloc[rw] > 0:
                            rslt['ArrayVolts'].iloc[rw] = sec_array['v_mp'].iloc[rw]
                            rslt['ArrayCurrent'].iloc[rw] = sec_array['i_mp'].iloc[rw]
@@ -256,9 +258,9 @@ class SPVSIM():
             return rslt
         return None
 
-    #TODO Should compute_powerFlows move to PVUtilities   
+    #TODO Should compute_powerFlows move to PVUtilities
     def compute_powerFlows(self):
-        """ Computes the distribution of Array power to loads and 
+        """ Computes the distribution of Array power to loads and
             a battery bank if it exists.  Returns a DataFrame containing
             performance data
             """
@@ -298,9 +300,9 @@ class SPVSIM():
                     if ArP > dcLd:
                         wkDict['PO'] = dcLd
                     else:
-                        wkDict['PO'] = ArP                   
+                        wkDict['PO'] = ArP
                     wkDict['DE'] = wkDict['PO']/ArP
-                    wkDict['PS'] = wkDict['PO']/dcLd             
+                    wkDict['PS'] = wkDict['PO']/dcLd
             else:
                 #  Charge Controller in System
                 self.chgc.Control_Output(ArP, ArV, ArI, acLd, dcLd, wkDict)
@@ -324,9 +326,9 @@ class SPVSIM():
             else:
                 EM[tindx]= ""
             self.out_rec += outln.format(tindx, ArP, ArV, ArI,
-                                         dcLd, acLd, dcLd+acLd, 
+                                         dcLd, acLd, dcLd+acLd,
                                          PO[tindx], PS[tindx], DE[tindx],
-                                         SL[tindx], BP[tindx], BD[tindx], 
+                                         SL[tindx], BP[tindx], BD[tindx],
                                          BS[tindx], EM[tindx])
             if self.debug and errfrm != None:
                 if self.errflg == False and errfrm[1] != 'Fatal':
@@ -335,7 +337,7 @@ class SPVSIM():
                 if errfrm[1] == 'Fatal':
                     msg = 'After {0} days '.format(days)
                     self.errflg = True
-                    self.stw.show_message(msg + errfrm[0], errfrm[1])                  
+                    self.stw.show_message(msg + errfrm[0], errfrm[1])
                     break
 
         # Create the DataFrame
@@ -366,7 +368,7 @@ class SPVSIM():
             self.errflg = False
             rt = datetime.now()
             ft = 'run_{0}_{1:02}_{2}_{3:02}{4:02}{5:02}.txt'
-            self.outfile = ft.format(rt.year, rt.month, rt.day, 
+            self.outfile = ft.format(rt.year, rt.month, rt.day,
                                      rt.hour, rt.minute, rt.second)
             self.outrec = None
             bnkflg = self.bnk.is_defined()
@@ -376,14 +378,14 @@ class SPVSIM():
             self.times = create_time_indices(self.site.read_attrb('tz'))
             self.site.get_atmospherics(self.times.index, self.stw)
             if bnkflg:
-                self.bnk.initialize_bank()           
+                self.bnk.initialize_bank()
             self.array_out = self.combine_arrays()
-            self.mnthly_array_perfm = build_monthly_performance(self.array_out, 
+            self.mnthly_array_perfm = build_monthly_performance(self.array_out,
                                                                 'ArrayPower')
             dl = np.array([self.load.get_daily_load()]*12)
-            dlf = pd.DataFrame({'Daily Load':dl}, 
+            dlf = pd.DataFrame({'Daily Load':dl},
                                index=self.mnthly_array_perfm[0].index.values)
-            self.mnthly_array_perfm[0] = self.mnthly_array_perfm[0].join(dlf)            
+            self.mnthly_array_perfm[0] = self.mnthly_array_perfm[0].join(dlf)
             if self.stw is not None and self.errflg == False:
                 self.stw.show_message('Panel Analysis Completed')
 
@@ -392,7 +394,7 @@ class SPVSIM():
             self.power_flow = self.compute_powerFlows()
             self.mnthly_pwr_perfm = build_monthly_performance(self.power_flow,
                                                               'PowerOut')
-            self.mnthly_pwr_perfm[0] = self.mnthly_pwr_perfm[0].join(dlf)  
+            self.mnthly_pwr_perfm[0] = self.mnthly_pwr_perfm[0].join(dlf)
             if self.stw is not None and self.errflg == False:
                 self.stw.show_message('Power Analysis Completed')
 
@@ -442,14 +444,14 @@ class SPVSIM():
         # Tests for proper inverter definition """
         if sum(self.load.get_load_profile()['AC']) > 0:
             if not self.inv.check_definition():
-                return False       
+                return False
             else:
                 invflg = True
 
         if self.bnk.check_definition():
             bflg = True
 
-        """Tests for Charge Controller definition 
+        """Tests for Charge Controller definition
            (only reqd if an iverter or battery is defined) """
         if (invflg or bflg) and not self.chgc.check_definition():
             return False
@@ -506,13 +508,13 @@ class SPVSIM():
                         'offset': 0.3, 'xaxis':np.arange(1,13) + 0.2},
                           {'label':'Daily Load', 'data':mpi.loc[:,'Daily Load'],
                         'type': 'Line', 'color': 'r', 'xaxis': xaxis,
-                        'width': 4.0, 'linestyle': 'solid' }                          
+                        'width': 4.0, 'linestyle': 'solid' }
                         ]
             dp = tbf.plot_graphic(self.rdw, 'Month of Year', 'Watts Relative to Load',
                                   np.arange(1,13),
                                   pltslist, 'Power Output Performance',
                                   (6,4))
-            
+
     def show_pwr_best_day(self):
         """ Create graphic of Solar Array Best Day Performance  """
         if self.array_out is not None:
