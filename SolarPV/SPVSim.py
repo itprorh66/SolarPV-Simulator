@@ -6,7 +6,7 @@ Modified on 11/27/2018 to Clean up comments
 Modified on 12/01/2018 to resolve Save/Import Issue #1
 Modified 0n 12/04/2018 to resolve Import Load Error - Issue #11
 Modified on 02/25/2019 for version 0.1.0
-Modified on 3/4/2019 for Issue #19
+Modified on 3/4/2019 for Issue #18
 
 @author: Bob Hentz
 -------------------------------------------------------------------------------
@@ -418,10 +418,10 @@ class SPVSIM():
 
     def debug_next(self):
         """ Handy function for debugging  """
-        print(self.times)
-        calndr = create_calendar_indices(self.site.read_attrb('tz'))
-        print(calndr.head())
-        print(calndr.index)
+#        print(self.times)
+#        calndr = create_calendar_indices(self.site.read_attrb('tz'))
+#        print(calndr.head())
+#        print(calndr.index)
         if self.perf_rept:
             fo = open(self.outfile, 'w')
             fo.write(self.out_rec)

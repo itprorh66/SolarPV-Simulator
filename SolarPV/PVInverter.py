@@ -3,7 +3,7 @@
 """
 Created on Thu Oct  4 17:37:01 2018
 Modified on 02/22/2019 for version 0.1.0
-Modified on 3/4/2019 for issue #18
+Modified on 3/4/2019 for issue #17
 
 
 @author: Bob Hentz

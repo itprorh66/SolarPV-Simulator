@@ -4,6 +4,7 @@
 Created on Thu Sep 27 17:00:07 2018
 Modified   Wed Dec  5 2018 (Fix Issue 2, Handle DC Loads)
 Modified on 02/25/2019 for version 0.1.0
+Modified on 03/06/2019 to correct in updating soc
 
 @author: Bob Hentz
 
@@ -211,7 +212,7 @@ class PVBatBank(Component):
             self.cur_cap += i_in
             if self.cur_cap > self.read_attrb('bnk_cap'):
                self.cur_cap = self.read_attrb('bnk_cap')
-            if self.cur_cap > 0:
+            if self.cur_cap <= 0:
                 self.cur_cap = 0                
             new_soc = min(self.cur_cap/self.read_attrb('bnk_cap'), 1)
             assert new_soc >= 0, ermsg.format(i_in,self.cur_cap)
