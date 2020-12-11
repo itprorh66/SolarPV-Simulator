@@ -351,7 +351,7 @@ def process_modules_csv(drcty):
 def import_new_resource(file_type ):
     dpo = os.path.join(os.getcwd(), 'Resources')
     dpi = os.path.join(os.getcwd(), 'Raw-Input')
-    if file_type is 'Modules':
+    if file_type == 'Modules':
         df = process_modules_csv(dpi)
         df.to_csv(os.path.join(dpo, 'CEC Modules.csv'))
     else:    

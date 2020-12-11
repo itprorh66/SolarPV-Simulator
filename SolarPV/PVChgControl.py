@@ -102,7 +102,7 @@ class PVChgControl(Component):
             if drain >= 0:
                 vout = min(vout, self.read_attrb('c_mvchg'))
                 bv = bv*1.2
-                if ctype  is 'MPPT':
+                if ctype  == 'MPPT':
                     iout = max(drain/vout, drain/bv)                                       
                 else:                   
                     iout = min(drain/vout, drain/bv)
@@ -146,7 +146,7 @@ class PVChgControl(Component):
                 wkDict['Error'] = (msg.format(sysLd, ArP), 'Warning')
             vout = min(vout, self.read_attrb('c_mvchg') )
             iout = min(iout, self.read_attrb('c_midschg'))
-            if self.read_attrb('c_type') is 'MPPT':
+            if self.read_attrb('c_type') == 'MPPT':
                 iout = max(iout, self.read_attrb('c_midschg'))
             pout = min(ArP, vout*iout, pload)
             if ArP > 0 and totUsrLd > 0:

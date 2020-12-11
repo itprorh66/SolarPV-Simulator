@@ -194,7 +194,7 @@ class SPVSIM():
             fn = askopenfilename(parent= self.root, title= 'Load Project',
                                defaultextension= '.spv',
                                initialdir= self.mdldir)
-        if fn is not '' and type(fn) is not tuple:
+        if fn != '' and type(fn) is not tuple:
             print (fn)
             self.filename = fn
             self.read_file(fn)
@@ -207,7 +207,7 @@ class SPVSIM():
                                    defaultextension= '.spv',
                                    initialfile = self.filename,
                                    initialdir= self.mdldir)
-        if fn is not ''and type(fn) is not tuple:
+        if fn != ''and type(fn) is not tuple:
             self.write_file(fn)
             self.filename = fn
 
@@ -481,7 +481,7 @@ class SPVSIM():
                                        defaultextension= '.txt',
                                        initialfile = '',
                                        initialdir= self.rptdir)
-            if fn is not '':
+            if fn != '':
                 self.filename = fn
                 fo = open(fn, 'w')
                 fo.write(s)

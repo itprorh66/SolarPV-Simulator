@@ -189,7 +189,7 @@ class PVBatBank(Component):
             doc = self.read_attrb('doc')/100
             typ = self.parts[0].read_attrb('b_typ')
             eff = 1
-            if typ is not '':
+            if typ != '':
                 eff = battery_types[typ][1]
             gv = self.master.site.read_attrb('gv')
             if gv == 0.0 or gv == '':

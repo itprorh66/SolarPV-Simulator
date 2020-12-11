@@ -39,7 +39,7 @@ class DataFrame:
         assert len(rw_vals) == len(self.col_hds), 'Len rw_vals = {0}, Len Col Hds = {1}'.format(len(rw_vals), len(self.col_hds))
         ind = dict()
         for itm in enumerate(self.col_hds):
-            if rw_vals[itm[0]] is None or rw_vals[itm[0]] is "":
+            if rw_vals[itm[0]] == None or rw_vals[itm[0]] == "":
                 ind[itm[1]] = ""
             else:
                 ind[itm[1]] = self.col_typs[itm[0]](rw_vals[itm[0]])
@@ -138,7 +138,7 @@ class DataFrame:
             s += '{0: >20}\t'.format(self.col_hds[indx])
         for r in range(rows):
             rw = self.get_row_by_index(r)
-            if rw[0] is not '':
+            if rw[0] != '':
                 s += '\n'
                 for c in range(len(rw)-1):
                     s += '{0: >20}\t'.format(rw[c])

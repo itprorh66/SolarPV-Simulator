@@ -24,7 +24,12 @@ from NasaData import getSiteElevation, LoadNasaData
 from FormBuilder import *
 from pvlib.location import Location
 #from pvlib.solarposition import get_sun_rise_set_transit
+
+#TODO fix this error
+#  - - - - - - Why This error - - - - - - - - - - - - - - -
+# ???  pvlib.solarpostion has function sun_rise_set_transit_spa
 from pvlib.solarposition import sun_rise_set_transit_spa
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - -  -
 from DataFrame import *
 
 class PVSite(Component):

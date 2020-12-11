@@ -20,14 +20,17 @@ Modified on 02/22/2019 for version 0.1.0
  -------------------------------------------------------------------------------
 """
 
+from tkinter import *
 import matplotlib
+#TODO Investigat whether this can come out or is it truly necessary
+#matplotlib.use('TkAgg', warn=False, force=True)
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-from tkinter import *
+
 from tkinter.messagebox import *
 import tkinter.ttk as ttk
 from tkinter.filedialog import *
-matplotlib.use('TkAgg', warn=False, force=True)
+
 
 """  Helper Methods & Functions """
 def ask_question(title, mssg, **kargs):

@@ -239,7 +239,7 @@ class batdata(tbf.data_entry_frame):
 
     def on_local_frame_close(self):
         """ perform automated calculatioins on frame closure """
-        if self.src['nomv'].read_data() is not 0.0:
+        if self.src['nomv'].read_data() != 0.0:
             self.update_bank_data()
 
         

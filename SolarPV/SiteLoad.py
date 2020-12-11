@@ -54,7 +54,7 @@ class SiteLoad(DataFrame):
         
     def setStdRowValues(self, ar):
         """ Update AR based on change of Load Type """
-        if ar[0] is not '':
+        if ar[0] != '':
             key = ar[0]
             if key in sp.load_types.keys():
                 od = sp.load_types[key]
