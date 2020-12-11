@@ -23,13 +23,8 @@ from Component import *
 from NasaData import getSiteElevation, LoadNasaData
 from FormBuilder import *
 from pvlib.location import Location
-#from pvlib.solarposition import get_sun_rise_set_transit
+from pvlib.solarposition import get_sun_rise_set_transit
 
-#TODO fix this error
-#  - - - - - - Why This error - - - - - - - - - - - - - - -
-# ???  pvlib.solarpostion has function sun_rise_set_transit_spa
-from pvlib.solarposition import sun_rise_set_transit_spa
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - -  -
 from DataFrame import *
 
 class PVSite(Component):
@@ -180,9 +175,7 @@ class PVSite(Component):
         if self.suntimes is None:
             lt = self.read_attrb('lat')
             ln = self.read_attrb('lon')
-#            st = get_sun_rise_set_transit(times, lt, ln)
-            st = sun_rise_set_transit_spa(times, lt, ln,
-                                 how='numpy', delta_t=67.0, numthreads=4)
+            st = get_sun_rise_set_transit(times, lt, ln)
             sunup = []
             sundwn = []
             transit = []
@@ -218,8 +211,7 @@ class PVSite(Component):
             # Build Arrays of Temps & Wind Speed by Hour            
             temp =np.zeros([len(times)])
             speed = np.zeros(len(times))
-            sunlight = sun_rise_set_transit_spa(times, lt, ln,
-                                 how='numpy', delta_t=67.0, numthreads=4)
+            sunlight = get_sun_rise_set_transit(times, lt, ln)
             sunindx = list(sunlight.index.values)
             avt = self.atmospherics['T10M']['S-Mean'].values
             mxt = self.atmospherics['T10M_MAX']['S-Mean'].values
