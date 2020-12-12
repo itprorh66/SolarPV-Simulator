@@ -1,6 +1,6 @@
 # Dependencies  
-This version of SolarPV-Simulator has been varified against the current version of Python 3.9 ver 3.9.0.  
-In addition, to the stdandard libraries loaded with this version, the following additional libraries have been included:
+This version of SolarPV-Simulator has been verified against the current version of Python 3.9 ver 3.9.0.  
+In addition, to the standard libraries loaded with this version, the following additional libraries have been included:
 
 | Function       | Library Name     | Version ID     |  
 | :------------- | :----------: | -----------: |  
