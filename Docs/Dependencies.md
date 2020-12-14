@@ -11,7 +11,7 @@ In addition, to the standard libraries loaded with this version, the following a
 | Graphical Plotting | Matplotlib | 3.3.3  |  
 | http library for web requests |  requests | 2.25.0 |  
 | csv support for unicode strings | unicodecsv  | 0.14.1 |  
-| http url llibrary | urlib3 |  1.25.11 |  
+| http url library | urlib3 |  1.25.11 |  
 | data pickling support | cloudpickle | 1.6.0   |  
 | statistical data visualization | seaborn | 0.11.0 |
 | scientific library | scipy | 1.5.3 |  

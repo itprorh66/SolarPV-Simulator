@@ -36,15 +36,15 @@ from PVArray import *
 from PVInverter import *
 from PVChgControl import *
 from SiteLoad import *
-import guiFrames as tbf
+# import guiFrames as tbf
 from PVUtilities import *
 from SPVSwbrd import *
 from NasaData import *
-from Parameters import panel_types
-import dateutil.parser
+# from Parameters import panel_types
+# import dateutil.parser
 from pandas.plotting import register_matplotlib_converters
 
-class SPVSIM():
+class SPVSIM:
     def __init__(self):
         register_matplotlib_converters()
         self.debug = False
@@ -57,12 +57,12 @@ class SPVSIM():
         self.countries = read_resource('Countries.csv', self.rscdir)
         self.modules = read_resource('CEC Modules.csv', self.rscdir)
         self.inverters = read_resource('CEC Inverters.csv', self.rscdir)
-        self.sdw = None      #System Description Window
-        self.rdw = None      #Results Display Window
-        self.stw = None      #Status Reporting Window
+        self.sdw = None      # System Description Window
+        self.rdw = None      # Results Display Window
+        self.stw = None      # Status Reporting Window
 
         self.array_list = list()
-        self.filename = None         #Complete path to Current File
+        self.filename = None         # Complete path to Current File
         self.site = PVSite(self)
         self.bat = PVBattery(self)
         self.pnl = PVPanel(self)
@@ -75,12 +75,12 @@ class SPVSIM():
         self.inv = PVInverter(self)
         self.load = SiteLoad(self)
         self.chgc = PVChgControl(self)
-        self.array_out = None   #The Solar Array Output by hour
+        self.array_out = None   # The Solar Array Output by hour
         self.times = None
         self.array_out = None
         self.power_flow = None
         self.outrec = None
-        self.outfile= None
+        self.outfile = None
         self.bringUpDisplay()
 
     def bringUpDisplay(self):
@@ -91,28 +91,27 @@ class SPVSIM():
         self.buildMasterDisplay()
         self.root.mainloop()
 
-
     def define_menuBar(self):
         """ Format the Menu bar at top of display """
-        self.menuoptions = {'File':[('Save',self.save_file),
-                                    ('Save as', self.save_file),
-                                    ('Load File', self.import_file),
-                                    ('Exit', self.on_app_delete)],
-                            'Display':[('Daily Load', self.show_load_profile),
-                                       {'Array Performance':[
+        self.menuoptions = {'File': [('Save', self.save_file),
+                                     ('Save as', self.save_file),
+                                     ('Load File', self.import_file),
+                                     ('Exit', self.on_app_delete)],
+                            'Display': [('Daily Load', self.show_load_profile),
+                                        {'Array Performance': [
                                          ('Overview', self.show_array_performance),
                                          ('Best Day', self.show_array_best_day),
                                          ('Worst Day',  self.show_array_worst_day)]},
-                                       {'Power Delivery':[
+                                        {'Power Delivery': [
                                                ('Performance', self.show_pwr_performance),
-                                                ('Best Day',self.show_pwr_best_day ),
+                                                ('Best Day', self.show_pwr_best_day ),
                                                 ('Worst Day', self.show_pwr_worst_day )]},
-                                       {'Battery Performance':[
-                                        ('Overview', self.bnk.show_bank_overview),
-                                        ('Bank Drain', self.bnk.show_bank_drain),
+                                        {'Battery Performance': [
+                                         ('Overview', self.bnk.show_bank_overview),
+                                         ('Bank Drain', self.bnk.show_bank_drain),
                                          ('Bank SOC',  self.bnk.show_bank_soc)]}
                                         ],
-                            'Report':[('System Description',
+                            'Report': [('System Description',
                                        self.create_overview_report),
                                       ('Site Load', self.print_load)]}
 
@@ -121,19 +120,19 @@ class SPVSIM():
         self.define_menuBar()
         mb = tbf.build_menubar(self.root, self.menuoptions)
         self.sdw = ttk.LabelFrame(self.root, text="System Description", borderwidth= 5,
-                                width = 500, height = 500, padding= 15, relief= GROOVE)
-        self.sdw.grid(row=1, column=1)
+                                width= 500, height= 500, padding= 15, relief= GROOVE)
+        self.sdw.grid(row= 1, column= 1)
 
-        self.rdw =ttk.Labelframe(self.root, text='Results', borderwidth= 5,
-                                width = 500, height = 500, padding= 15, relief= GROOVE)
+        self.rdw = ttk.Labelframe(self.root, text='Results', borderwidth= 5,
+                                width= 500, height= 500, padding= 15, relief= GROOVE)
         self.rdw.grid(row=1, column=3)
-        self.stw = tbf.status_window(self.root, 'Status Reporting', [2,1], 3 )
+        self.stw = tbf.status_window(self.root, 'Status Reporting', [2, 1], 3 )
         self.buildSwitchboard()
 
     def buildSwitchboard(self):
         """ Method to Build Switchboard Display & Switching Logic """
-        self.swb = spvSwitchboard(self, location = [0,0], parent= self.sdw,
-                                  menuTitle = 'Project Details')
+        self.swb = spvSwitchboard(self, location= [0,0], parent= self.sdw,
+                                  menuTitle= 'Project Details')
     def on_app_delete(self):
         """ User has selected Window Abort """
         if tbf.ask_question('Window Abort', 'Save Existing File?'):
@@ -319,7 +318,7 @@ class SPVSIM():
             msg = ''
             errfrm = None
             if 'Error' in wkDict.keys():
-                days = 1 + tindx//24
+                days: int = 1 + tindx//24
                 errfrm = wkDict['Error']
                 msg = 'After {0} days '.format(days)
                 EM[tindx] = msg + errfrm[0].replace('\n', ' ')
