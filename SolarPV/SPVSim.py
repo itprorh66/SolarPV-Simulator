@@ -451,8 +451,8 @@ class SPVSIM:
             bflg = True
 
         """Tests for Charge Controller definition
-           (only reqd if an iverter or battery is defined) """
-        if (invflg or bflg) and not self.chgc.check_definition():
+           (only read if an inverter or battery is defined) """
+        if bflg and not invflg and not self.chgc.check_definition():
             return False
 
         return True

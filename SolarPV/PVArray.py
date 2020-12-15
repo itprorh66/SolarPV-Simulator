@@ -144,11 +144,11 @@ class PVArray(Component):
         
         """Define 'airmass_relative'  & 'airmass_absolute' """       
         airmass = loc.get_airmass(times, solar_position=solpos, model='kastenyoung1989')
-        
+
         """ Compute ghi, dni, & dhi """
-        csky= loc.get_clearsky(times, model='ineichen', solar_position= solpos, 
-                               dni_extra=None)
-#        csky= loc.get_clearsky(times, model='ineichen')        
+#        csky= loc.get_clearsky(times, model='ineichen', solar_position= solpos,
+#                               dni_extra=None)
+        csky= loc.get_clearsky(times, model='ineichen')
         """ Compute 'aoi' """
         aoi = pvsys.get_aoi(solpos['zenith'], solpos['azimuth'])
          
