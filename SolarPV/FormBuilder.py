@@ -22,7 +22,7 @@ Modified on 02/22/2019 for version 0.1.0
 
 from tkinter import *
 import tkinter.ttk as ttk
-from FieldClasses import *
+from FieldClasses import build_args, data_cell, list_cell
 
 """ Class for generating Display of Componet Specification Form  """
 class DataForm(ttk.Frame):

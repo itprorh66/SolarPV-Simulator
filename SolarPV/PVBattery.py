@@ -20,10 +20,11 @@ Modified on 02/22/2019 for version 0.1.0
                or FITNESS FOR A PARTICULAR PURPOSE.
  -------------------------------------------------------------------------------
 """
-from FormBuilder import *
-from FieldClasses import *
+from tkinter import *
+from FormBuilder import DataForm
+from FieldClasses import data_field, option_field
 from Parameters import battery_types
-from Component import *
+from Component import Component
 
         
 class PVBattery(Component):

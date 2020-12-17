@@ -24,7 +24,7 @@ Modified on 3/4/2019 for issue #17
 from FormBuilder import *
 from PVUtilities import *
 from Component import *
-
+from FieldClasses import data_field, option_field
 
 class PVInverter(Component):
     """ Methods associated with the definition, display, and operation of an

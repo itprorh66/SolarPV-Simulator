@@ -20,16 +20,16 @@ Modified on 02/22/2019 for version 0.1.0
                or FITNESS FOR A PARTICULAR PURPOSE.
  -------------------------------------------------------------------------------
 """
-
-from FormBuilder import *
-from PVUtilities import *
-from Component import *
+from tkinter import *
+from FormBuilder import DataForm
+from Component import Component
+from FieldClasses import data_field, option_field
 from Parameters import panel_racking, albedo_types, panel_types
 
 from pvlib import *
 from pvlib.pvsystem import *
 from pvlib.solarposition import spa_python
-from pvlib.irradiance import aoi, total_irrad
+from pvlib.irradiance import aoi, get_total_irradiance
 
 class PVArray(Component):
     """ Methods associated with the definition, display, and operation of a

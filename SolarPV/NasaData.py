@@ -29,8 +29,8 @@ Modified on 02/22/2019 for version 0.1.0
 """
 import numpy as np
 import pandas as pd
-import seaborn as sns
-import scipy as syp
+#import seaborn as sns
+#import scipy as syp
 import statistics as stat
 import requests
 import datetime as dt

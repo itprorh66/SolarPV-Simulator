@@ -20,12 +20,10 @@ Modified on 02/25/2019 for version 0.1.0
                or FITNESS FOR A PARTICULAR PURPOSE.
  -------------------------------------------------------------------------------
 """
-import numpy as np
-from math import log
-import pandas as pd
-from FormBuilder import *
-from FieldClasses import *
-from Component import *
+from tkinter import *
+from FormBuilder import DataForm
+from FieldClasses import data_field, option_field
+from Component import Component
 from Parameters import chgcntl_types
 
 class PVChgControl(Component):

@@ -20,9 +20,11 @@ Modified on 3/4/2019 for issue #17
                or FITNESS FOR A PARTICULAR PURPOSE.
  -------------------------------------------------------------------------------
 """
-from PVUtilities import *
-from Component import *
-from FormBuilder import *
+#from PVUtilities import *
+from tkinter import *
+from Component import Component
+from FormBuilder import DataForm
+from FieldClasses import data_field, option_field
 
 class PVPanel(Component):
     """ Methods associated with the definition, display, and operation of a

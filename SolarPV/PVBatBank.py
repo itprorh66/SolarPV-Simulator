@@ -21,13 +21,14 @@ Modified on 03/06/2019 to correct in updating soc
                or FITNESS FOR A PARTICULAR PURPOSE.
  -------------------------------------------------------------------------------
 """
+from tkinter import *
 import numpy as np
 from math import log
 import pandas as pd
-from FormBuilder import *
-from FieldClasses import *
+from FormBuilder import DataForm
+from FieldClasses import data_field
 from Parameters import battery_types
-from Component import *
+from Component import Component
 from guiFrames import plot_graphic
 #from PVUtilities import create_time_mask
 

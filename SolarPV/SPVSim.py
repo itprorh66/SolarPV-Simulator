@@ -23,26 +23,30 @@ Modified on 3/4/2019 for Issue #18
 """
 
 from tkinter import *
-from tkinter.filedialog import *
-from datetime import date, datetime
+from tkinter.filedialog import askopenfilename
+from datetime import datetime
 import os.path
+import pickle
+import numpy as np
+import pandas as pd
+from pandas.plotting import register_matplotlib_converters
 
-
-from PVSite import *
-from PVBattery import *
-from PVBatBank import *
-from PVPanel import *
-from PVArray import *
-from PVInverter import *
-from PVChgControl import *
-from SiteLoad import *
-# import guiFrames as tbf
-from PVUtilities import *
-from SPVSwbrd import *
-from NasaData import *
+from PVSite import PVSite
+from PVBattery import PVBattery
+from PVBatBank import PVBatBank
+from PVPanel import PVPanel
+from PVArray import PVArray
+from PVInverter import PVInverter
+from PVChgControl import PVChgControl
+from SiteLoad import SiteLoad
+import guiFrames as tbf
+from PVUtilities import (read_resource, hourly_load, create_time_indices, 
+                         build_monthly_performance, build_overview_report)
+from SPVSwbrd import spvSwitchboard
+# from NasaData import *
 # from Parameters import panel_types
 # import dateutil.parser
-from pandas.plotting import register_matplotlib_converters
+
 
 class SPVSIM:
     def __init__(self):
@@ -194,7 +198,7 @@ class SPVSIM:
                                defaultextension= '.spv',
                                initialdir= self.mdldir)
         if fn != '' and type(fn) is not tuple:
-            print (fn)
+            # print (fn)
             self.filename = fn
             self.read_file(fn)
 

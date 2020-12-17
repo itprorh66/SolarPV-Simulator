@@ -20,15 +20,13 @@ Modified on 02/25/2019 for version 0.1.0
 import numpy as np
 import math
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 import os.path
-import pickle
 import requests
 import csv
 from urllib.request import urlopen
-from pvlib.irradiance import total_irrad
-from datetime import date, datetime
+from datetime import date
+
+
 
 def dfcell_is_empty(cell_value):
     """ Return True if Dataframe cell contains NaN """
@@ -237,7 +235,7 @@ def build_overview_report(mdl):
     """ Create a formated overview of Project Design data """
     s = 'Overview Report for Project {0}'.format( 
             mdl.site.read_attrb('proj'))
-    s +='\n\n\tDescription: '.format(
+    s +='\n\n\tDescription: {0}'.format(
             mdl.site.read_attrb('p_desc'))
     s +='\n\t\tClient: {0}\tCity: {1}\tCountry: {2}'.format(
             mdl.site.read_attrb('client'),

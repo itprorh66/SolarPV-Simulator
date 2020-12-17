@@ -17,13 +17,18 @@ Modified on 02/22/2019 for version 0.1.0
                or FITNESS FOR A PARTICULAR PURPOSE.
  -------------------------------------------------------------------------------
 """
+from tkinter import *
+import pandas as pd
+import numpy as np
 from guiFrames import ask_question, popup_notification
-from PVUtilities import *
-from Component import *
+from PVUtilities import dfcell_is_empty, hourly_temp, hourly_speed
+from Component import Component
 from NasaData import getSiteElevation, LoadNasaData
-from FormBuilder import *
+from FormBuilder import DataForm
+from FieldClasses import data_field, option_field
 from pvlib.location import Location
-from pvlib.solarposition import get_sun_rise_set_transit
+#from pvlib.solarposition import get_sun_rise_set_transit
+from pvlib.solarposition import sun_rise_set_transit_spa
 
 from DataFrame import *
 
@@ -175,7 +180,8 @@ class PVSite(Component):
         if self.suntimes is None:
             lt = self.read_attrb('lat')
             ln = self.read_attrb('lon')
-            st = get_sun_rise_set_transit(times, lt, ln)
+            #st = get_sun_rise_set_transit(times, lt, ln)
+            st = sun_rise_set_transit_spa(times, lt, ln)
             sunup = []
             sundwn = []
             transit = []
@@ -211,7 +217,8 @@ class PVSite(Component):
             # Build Arrays of Temps & Wind Speed by Hour            
             temp =np.zeros([len(times)])
             speed = np.zeros(len(times))
-            sunlight = get_sun_rise_set_transit(times, lt, ln)
+            #sunlight = get_sun_rise_set_transit(times, lt, ln)
+            sunlight = sun_rise_set_transit_spa(times, lt, ln)
             sunindx = list(sunlight.index.values)
             avt = self.atmospherics['T10M']['S-Mean'].values
             mxt = self.atmospherics['T10M_MAX']['S-Mean'].values
