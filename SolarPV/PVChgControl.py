@@ -73,6 +73,7 @@ class PVChgControl(Component):
             return False, 'Charge Control Max Bat volts mismatch Bank Voltage'
         return True, ""
 
+    #TODO Move this method to PVUtilities so that Inverter and/or ChargeController can drive Power calculation
     def Control_Output(self, ArP, ArV, ArI, acLd, dcLd, wkDict):
         """Computes the controlled Voltage & current output used to either power
            the load or charge/discharge a battery bank. Updates the

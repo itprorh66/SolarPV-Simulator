@@ -86,7 +86,8 @@ class PVSite(Component):
             mtghgt = self.master.ary.read_attrb('mtg_hgt')
             self.curloc = Location(self.read_attrb('lat'), 
                             self.read_attrb('lon'), 
-                            tz= self.read_attrb('tz'), 
+                            #Sets Valid TZ information for Location
+                            tz= f"Etc/GMT{-self.read_attrb('tz'):+}", 
                             altitude= self.read_attrb('elev') + mtghgt, 
                             name= '{0}, {1}'.format(self.read_attrb('city'), 
                                    self.read_attrb('cntry')))

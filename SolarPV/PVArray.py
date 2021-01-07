@@ -127,17 +127,30 @@ class PVArray(Component):
         mdl_rack_config =self.read_attrb('mtg_cnfg')
         pnl_name = self.parts[0].read_attrb('Name')
         pnl_parms = self.parts[0].get_parameters()
+        ##TODO Resolve problem with pnl params definition 
+        ## ----    Temporary fix ---------------
+        TEMPERATURE_MODEL_PARAMETERS = { 
+        'sapm': {'open_rack_glass_glass': {'a': -3.47, 'b': -.0594, 'deltaT': 3},
+                 'close_mount_glass_glass': {'a': -2.98, 'b': -.0471, 'deltaT': 1},
+                 'open_rack_glass_polymer': {'a': -3.56, 'b': -.0750, 'deltaT': 3},
+                 'insulated_back_glass_polymer': {'a': -2.81, 'b': -.0455, 'deltaT': 0},
+                 },
+        'pvsyst': {'freestanding': {'u_c': 29.0, 'u_v': 0},
+                   'insulated': {'u_c': 15.0, 'u_v': 0}}
+        }
+        temp_parms = TEMPERATURE_MODEL_PARAMETERS['sapm']['open_rack_glass_glass']
+        ## -----   End of Fix ------------------
         air_temp = cur_site.get_air_temp(times, stat_win)['Air_Temp']
         wnd_spd = cur_site.get_wind_spd(times, stat_win)['Wind_Spd']
         pvsys = PVSystem(surf_tilt, surf_azm, surf_alb,
-                         module= pnl_name, module_parameters= pnl_parms, 
+                         module= pnl_name, module_parameters= pnl_parms,
+                         temperature_model_parameters = temp_parms,
                          modules_per_string= mdl_series, 
                          strings_per_inverter= mdl_sip,
                          inverter= inv_name,
                          inverter_parameters= inv_parameters,
                          racking_model= mdl_rack_config,
                          name= loc.name)
-        pvsys.localize(loc)
         """Define 'apparent_elevation', 'apparent_zenith', 'azimuth',  
            'elevation', 'equation_of_time', and 'zenith'   """
         solpos = loc.get_solarposition(times, pressure= None, temperature= air_temp)
@@ -161,14 +174,14 @@ class PVArray(Component):
                                            model='haydavies')        
         
         """ Compute 'temp_cell' & 'temp_module'  """
-        temps = pvsys.sapm_celltemp(total_irrad['poa_global'], wnd_spd, air_temp)
+        temps = pvsys.sapm_celltemp(total_irrad['poa_global'], air_temp, wnd_spd)
         vars_dict = panel_types[self.parts[0].read_attrb('Technology')]
         egrf = vars_dict.pop('EgRef', 1.121)
         dgdt = vars_dict.pop('dEgdT', -0.0002677)
         
         photocurrent, saturation_current, resistance_series, resistance_shunt, nNsVth = (
             pvsys.calcparams_desoto(total_irrad['poa_global'],
-                                             temp_cell= temps['temp_cell']))
+                                             temp_cell= pnl_parms['T_NOCT']))
                  
         """ Compute Total Array  'i_sc',  'v_oc',  'i_mp',  'v_mp',
             'p_mp',  'i_x', &  'i_xx' """

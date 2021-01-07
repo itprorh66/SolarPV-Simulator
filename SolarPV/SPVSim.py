@@ -23,6 +23,7 @@ Modified on 3/4/2019 for Issue #18
 """
 
 from tkinter import *
+import tkinter.ttk as ttk
 from tkinter.filedialog import askopenfilename
 from datetime import datetime
 import os.path

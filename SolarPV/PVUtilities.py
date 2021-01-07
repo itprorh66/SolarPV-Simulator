@@ -229,7 +229,106 @@ def find_best_doy(df, select_value):
         if rslt_df.iloc[indx] == mx:
             return indx + 1
     raise IndexError('No best day value found')
-    
+
+#TODO Complete Implementation of this function and test it's performance    
+def Control_Output(parent, attrb_dict,  ArP, ArV, ArI, acLd, dcLd, wkDict):
+    """Computes the controlled Voltage & current output used to either power
+       the load or charge/discharge a battery bank. Updates the
+       battery bank and contents of wkDict based on results of computations"""
+       
+    """## attrb_dict Contains the following elements:  ###
+      'Bnk' - PVBattery Instance
+      'Inv' - PVInverter Instance
+      'Chg' - PVChgController Instance    
+    """
+    return None     # This is here, since function is inco,mplete and untested. 
+    #These attributes come from the Controller/Inverter    
+    c_cnsmpt  = attrb_dict['c_cnsmpt']
+    c_type    = attrb_dict['c_type']
+    c_eff     =  attrb_dict['c_eff']
+    inv_Pnt   = attrb_dict['Pnt']
+    c_pvmxv   = attrb_dict['c_pvmxv']
+    c_pvmxi   = attrb_dict['c_pvmxi']
+    c_mvchg   = attrb_dict['c_mvchg']
+    c_midschg = attrb_dict['c_midschg']
+    invFlg    = attrb_dict['Inv'].is_defined()
+    bnkFlg    = attrb_dict['Bnk'].is_defined()
+    chgFlg    = attrb_dict['Chg'].is_defined()
+
+    sysLd = c_cnsmpt
+    totUsrLd = dcLd + acLd
+    if invFlg:
+        sysLd += inv_Pnt
+        sysLd += attrb_dict['Inv'].compute_dc_power(acLd)
+    sysLd = (100*(totUsrLd + sysLd)/c_eff) - totUsrLd
+    pload = totUsrLd + sysLd
+    vout = min(ArV, c_pvmxv)
+    iout = min(ArI, c_pvmxi)
+    drain = ArP - pload*1.1
+    #Test for Batbank and either charge state or ability to discharge
+    if bnkFlg and (drain >= 0 or (drain <0 and  attrb_dict['Bnk'].is_okay())):
+        # A battery bank exists and it is usable for charging or discharging
+        bnkok =  attrb_dict['Bnk'].is_okay()
+        bv =  attrb_dict['Bnk'].get_volts()
+        if bv <= 0:
+            bv = 1
+        if drain >= 0:
+            vout = min(vout, c_mvchg)
+            bv = bv*1.2
+            if c_type  == 'MPPT':
+                iout = max(drain/vout, drain/bv)                                       
+            else:                   
+                iout = min(drain/vout, drain/bv)
+
+        else:
+            # Discharge Battery state
+            if abs(drain) <= attrb_dict['Bnk'].current_power():
+                if vout == 0.0 or iout == 0.0:
+                    vout = bv
+                    iout = min(c_midschg, -drain/vout)
+                iout= -1* iout
+            else:
+                # Bnk can't provide needed power
+                if ArP < sysLd:
+                    msg = 'Insufficient Array & Bank power to sustain System operation'
+                    msg += '\n {0:.2f} watts needed but only {1:.2f} watts generated'
+                    wkDict['Error'] = (msg.format(sysLd, ArP), 'Warning')
+                else:
+                    iout = -1 * ((ArP-sysLd)/vout)
+        #update Bank State
+        attrb_dict['Bnk'].update_soc(iout, wkDict)
+        if ArP - wkDict['BD'] -pload >= 0.0:
+            #okay met pload requirements
+            wkDict['PO'] = pload
+        elif ArP - wkDict['BD'] - sysLd >= 0:
+            wkDict['PO'] = ArP - sysLd
+        else:
+            msg = 'Insufficient Array + Bank power to sustain System operation'
+            msg += '\n {0:.2f} watts needed but only {1:.2f} watts generated'
+            wkDict['Error'] = (msg.format(sysLd, ArP), 'Warning')
+            wkDict['PO'] = 0.0                               
+        if totUsrLd > 0: 
+            wkDict['PS'] = wkDict['PO']/pload              
+        if ArP > 0:
+            wkDict['DE'] = wkDict['PO'] /ArP     
+    else:
+        # No battery exists or battery can't be discharged further
+        if ArP < sysLd and totUsrLd > 0:
+            msg = 'Insufficient Array power to sustain System operation'
+            msg += '\n {0:.2f} watts needed but only {1:.2f} watts available' 
+            wkDict['Error'] = (msg.format(sysLd, ArP), 'Warning')
+        vout = min(vout, c_mvchg)
+        iout = min(iout, c_midschg)
+        if c_type == 'MPPT':
+            iout = max(iout, c_midschg)
+        pout = min(ArP, vout*iout, pload)
+        if ArP > 0 and totUsrLd > 0:
+            wkDict['PO'] = pout
+            wkDict['DE'] = wkDict['PO']/ArP
+        if ArP > pload and totUsrLd > 0:
+            wkDict['PS'] = pout/pload
+
+
 
 def build_overview_report(mdl):
     """ Create a formated overview of Project Design data """
