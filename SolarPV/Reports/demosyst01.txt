@@ -1,0 +1,68 @@
+Overview Report for Project Sample Project
+
+	Description: Demonstration of SolarPV Functionality
+		Client: Collabratory	City: Buhawayo	Country: Zimbabwe
+		Lat: -19.2381,	Lon: 28.7601,	Elev: 1217.47
+
+	User Load Description
+
+Peak Hourly Load KW: Total= 1.68,	AC= 1.68,	DC= 0.00
+Array 1
+	PV Array
+	Tilt Angle (Degrees):	60.0		Azimuth (Degrees):	220.0	
+	Mounting Configuration:	roof_mount_cell_glassback	
+	Space under Panel (cm):	0.0		Mounting Height (m):	3.0	
+	Ground Surface Condition:	Galvanized Steel (Dirty)	
+	Albedo:	0.08		Units in Series:	4	
+	Strings in Parallel:	8		Array Vmp:	119.2	
+	Array Imp:	64.56		Total Panels:	32	
+
+
+Composed of units including:
+PV Panel
+	Manufactuerer:	Mitsubishi Electric	
+	Model:	PV-MJU240GB		Description:	Mitsubishi Electric PV-MJU240GB	
+	Cell Type:  	Mono-c-Si		Nominal Operating Cell Temp:	45.0	
+	Voltage at Max Power (Vmp):	29.8	
+	Current at Max Power (Imp):	8.07	
+	Open Circuit Voltage (Voc):	37.0	
+	Short Circuit Current (Isc):	8.6	
+	Power Rating Pmpp (W):	217.2		Cell Size(cm):	1.526	
+	Number of cells:	60		Series Resistance (ohms):	0.327	
+	Shunt Resistance (ohms):	427.16	
+	BIPV:	0.0		alpha_sc:	0.0051600000000000005	
+	beta_oc:	-0.1258		a_ref:	1.5626	
+	I_L_ref:	8.607000000000001		I_o_ref:	4.434e-10	
+	Adjust:	9.4		gamma_r:	-0.456		
+
+
+	Battery Bank
+	Days of Autonomy:  	2		Depth of Discharge (%):  	65.0	
+	Units in Series:  	2		Strings in Parallel:  	1	
+	Total Bank Batteries:  	2		Bank Capacity (A-H):  	1148.0	
+	Bank Voltage:  	48.0		
+
+Composed of units including:
+Battery
+	Manufacturer:	Outback		  Model:	1300RE	
+	Description:	Outback Power Energy Cell 1300RE	
+	Type:	AGM		Nominal Voltage (VDC):	24.0	
+	Rated Capacity (AH):	1148.0		Hour Basis for Rating:	100	
+	Internal Resistance (Ohms):	11.0	
+	Rated temperature (C):	25.0		Temp Coeficient (C):	0.0	
+	Max No. of Discharge Cycles:	1000	
+	Depth of Discharge % for Max Lifecycle:	50.0	
+
+
+
+	PV Inverter
+	Manufactuerer:	OutBack Power Technologies Inc	
+	Model:	GS4048A [240V] [SI1] 240V [CEC 2018]	
+	Description:	OutBack Power Technologies Inc : GS4048A [240V] [SI1] 240V [CEC 2018]	
+	AC Voltage (Vac):	240.0		AC Power (Watts):	3600.0	
+	DC Power Panel(Watts):	3846.93	
+	DC Voltage (Vdc):	48.0		Night Time Power (Watts):	0.1	
+	Max DC Voltage (Vdcmax):	56.0	
+	Max DC Current (Idcmax):	80.1444	
+	Mppt_low (Vdc):	44.0		Mppt_high (Vdc)	56.0	
+
