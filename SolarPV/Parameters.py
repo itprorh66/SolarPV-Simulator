@@ -5,6 +5,7 @@ Created on Wed May  2 13:57:09 2018
 Modified   Wed Dec  5 2018 - Update for Issue #2 DC loads
 modified   Thu Dec 13 2018 (Issue #5)
 Modified on 02/22/2019 for version 0.1.0
+modified 1/8/2021 to accomodate pvlib's 0.8 use of Sandia Temperature_model_Parameters
 
 @author: Bob Hentz
 -------------------------------------------------------------------------------
@@ -95,6 +96,16 @@ panel_racking = ['open_rack_cell_glassback',
                  'open_rack_cell_polymerback',
                  'insulated_back_polymerback',
                  'open_rack_polymer_thinfilm_steel']
+
+
+# Transforms PVLIB panel_racking configuration to Sandia temperature model nomenclature
+temp_model_xlate = { 'open_rack_cell_glassback':['sapm', 'open_rack_glass_glass'], 
+                                 'roof_mount_cell_glassback':['sapm', 'close_mount_glass_glass'],
+                                 'open_rack_cell_polymerback':['sapm', 'open_rack_glass_polymer'],
+                                 'insulated_back_polymerback':['sapm', 'insulated_back_glass_polymer'],
+                                 'open_rack_polymer_thinfilm_steel':['sapm', 'open_rack_glass_glass']
+                                 }
+
 
 # Define battery efficiency factors based on type
 battery_types = {'FLA':('Flooded Lead Acid', 0.90),

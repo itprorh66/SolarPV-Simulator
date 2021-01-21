@@ -4,6 +4,7 @@
 Created on Fri Oct  5 13:39:02 2018
 modified   Wed Dec 12 2018 (Issue #5)
 Modified on 02/25/2019 for version 0.1.0
+Modified 01/20/2021 to relocate power control to PVUtilities to allow for inverter control
 
 @author: Bob Hentz
 
@@ -73,86 +74,6 @@ class PVChgControl(Component):
             return False, 'Charge Control Max Bat volts mismatch Bank Voltage'
         return True, ""
 
-    #TODO Move this method to PVUtilities so that Inverter and/or ChargeController can drive Power calculation
-    def Control_Output(self, ArP, ArV, ArI, acLd, dcLd, wkDict):
-        """Computes the controlled Voltage & current output used to either power
-           the load or charge/discharge a battery bank. Updates the
-           battery bank and contents of wkDict based on results of computations"""
-        sysLd = self.read_attrb('c_cnsmpt')
-        ctype = self.read_attrb('c_type')
-        totUsrLd = dcLd + acLd
-        invFlg  = self.master.inv.is_defined()
-        bnkFlg  = self.master.bnk.is_defined()
-        if invFlg:
-            sysLd += self.master.inv.read_attrb('Pnt')
-            sysLd += self.master.inv.compute_dc_power(acLd)
-        sysLd = (100*(totUsrLd + sysLd)/self.read_attrb('c_eff')) - totUsrLd
-        pload = totUsrLd + sysLd
-        vout = min(ArV, self.read_attrb('c_pvmxv'))
-        iout = min(ArI, self.read_attrb('c_pvmxi'))
-        drain = ArP - pload*1.1
-        #Test for Batbank and either charge state or ability to discharge
-        if bnkFlg and (drain >= 0 or (drain <0 and self.master.bnk.is_okay())):
-            # A battery bank exists and it is usable for charging or discharging
-            bnkok = self.master.bnk.is_okay()
-            bv = self.master.bnk.get_volts()
-            if bv <= 0:
-                bv = 1
-            if drain >= 0:
-                vout = min(vout, self.read_attrb('c_mvchg'))
-                bv = bv*1.2
-                if ctype  == 'MPPT':
-                    iout = max(drain/vout, drain/bv)                                       
-                else:                   
-                    iout = min(drain/vout, drain/bv)
-    
-            else:
-                # Discharge Battery state
-                if abs(drain) <= self.master.bnk.current_power():
-                    if vout == 0.0 or iout == 0.0:
-                        vout = bv
-                        iout = min(self.read_attrb('c_midschg'), -drain/vout)
-                    iout= -1* iout
-                else:
-                    # Bnk can't provide needed power
-                    if ArP < sysLd:
-                        msg = 'Insufficient Array & Bank power to sustain System operation'
-                        msg += '\n {0:.2f} watts needed but only {1:.2f} watts generated'
-                        wkDict['Error'] = (msg.format(sysLd, ArP), 'Warning')
-                    else:
-                        iout = -1 * ((ArP-sysLd)/vout)
-            #update Bank State
-            self.master.bnk.update_soc(iout, wkDict)
-            if ArP - wkDict['BD'] -pload >= 0.0:
-                #okay met pload requirements
-                wkDict['PO'] = pload
-            elif ArP - wkDict['BD'] - sysLd >= 0:
-                wkDict['PO'] = ArP - sysLd
-            else:
-                msg = 'Insufficient Array + Bank power to sustain System operation'
-                msg += '\n {0:.2f} watts needed but only {1:.2f} watts generated'
-                wkDict['Error'] = (msg.format(sysLd, ArP), 'Warning')
-                wkDict['PO'] = 0.0                               
-            if totUsrLd > 0: 
-                wkDict['PS'] = wkDict['PO']/pload              
-            if ArP > 0:
-                wkDict['DE'] = wkDict['PO'] /ArP     
-        else:
-            # No battery exists or battery can't be discharged further
-            if ArP < sysLd and totUsrLd > 0:
-                msg = 'Insufficient Array power to sustain System operation'
-                msg += '\n {0:.2f} watts needed but only {1:.2f} watts available' 
-                wkDict['Error'] = (msg.format(sysLd, ArP), 'Warning')
-            vout = min(vout, self.read_attrb('c_mvchg') )
-            iout = min(iout, self.read_attrb('c_midschg'))
-            if self.read_attrb('c_type') == 'MPPT':
-                iout = max(iout, self.read_attrb('c_midschg'))
-            pout = min(ArP, vout*iout, pload)
-            if ArP > 0 and totUsrLd > 0:
-                wkDict['PO'] = pout
-                wkDict['DE'] = wkDict['PO']/ArP
-            if ArP > pload and totUsrLd > 0:
-                wkDict['PS'] = pout/pload
 
     def display_input_form(self, parent_frame):
         """ Generate the Data Entry Form """

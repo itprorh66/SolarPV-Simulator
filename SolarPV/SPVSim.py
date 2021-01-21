@@ -7,6 +7,8 @@ Modified on 12/01/2018 to resolve Save/Import Issue #1
 Modified 0n 12/04/2018 to resolve Import Load Error - Issue #11
 Modified on 02/25/2019 for version 0.1.0
 Modified on 3/4/2019 for Issue #18
+modified 1/8/2021 to clean up code as part of upgrade for pvlib 0.8
+Modified 01/20/2021 to fix issue with inverter & chgcontrlr functions
 
 @author: Bob Hentz
 -------------------------------------------------------------------------------
@@ -22,7 +24,7 @@ Modified on 3/4/2019 for Issue #18
  -------------------------------------------------------------------------------
 """
 
-from tkinter import *
+from tkinter import Tk, GROOVE
 from tkinter import ttk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 
@@ -43,7 +45,8 @@ from PVChgControl import PVChgControl
 from SiteLoad import SiteLoad
 import guiFrames as tbf
 from PVUtilities import (read_resource, hourly_load, create_time_indices, 
-                         build_monthly_performance, build_overview_report)
+                         build_monthly_performance, build_overview_report,
+                         computOutputResults)
 from SPVSwbrd import spvSwitchboard
 # from NasaData import *
 # from Parameters import panel_types
@@ -124,7 +127,7 @@ class SPVSIM:
     def buildMasterDisplay(self):
         """ Build the Display Window """
         self.define_menuBar()
-        mb = tbf.build_menubar(self.root, self.menuoptions)
+        tbf.build_menubar(self.root, self.menuoptions)
         self.sdw = ttk.LabelFrame(self.root, text="System Description", borderwidth= 5,
                                 width= 500, height= 500, padding= 15, relief= GROOVE)
         self.sdw.grid(row= 1, column= 1)
@@ -284,7 +287,6 @@ class SPVSIM:
         outln += '{5:6.2f}\t{6:6.2f}\t{7:6.2f}\t{8:6.2f}\t{9:6.2f}\t'
         outln += '{10:6.2f}\t{11:6.2f}\t{12:6.2f}\t{13:6.2f}\t{14}\n'
         bflg = self.bnk.is_defined()
-        cflg = self.chgc.is_defined()
         self.out_rec = hdr
         for tindx in range(len(self.array_out)):
             wkDict = dict()
@@ -298,19 +300,8 @@ class SPVSIM:
                 ArI = 0.0
             dcLd = self.array_out['DC_Load'].iloc[tindx]
             acLd = self.array_out['AC_Load'].iloc[tindx]
-            if not cflg:
-                # No Charge Controller in System
-                if dcLd > 0.0 and ArP >0.0:
-                    # Load to service
-                    if ArP > dcLd:
-                        wkDict['PO'] = dcLd
-                    else:
-                        wkDict['PO'] = ArP
-                    wkDict['DE'] = wkDict['PO']/ArP
-                    wkDict['PS'] = wkDict['PO']/dcLd
-            else:
-                #  Charge Controller in System
-                self.chgc.Control_Output(ArP, ArV, ArI, acLd, dcLd, wkDict)
+            sysAttribs = {'Inv': self.inv, 'Chg': self.chgc, 'Bnk': self.bnk}
+            computOutputResults(sysAttribs,  ArP, ArV, ArI, acLd, dcLd, wkDict)
 
             # update arrays for tindx
             PO[tindx] = wkDict.pop('PO', 0.0)
@@ -515,7 +506,7 @@ class SPVSIM:
                         'type': 'Line', 'color': 'r', 'xaxis': xaxis,
                         'width': 4.0, 'linestyle': 'solid' }
                         ]
-            dp = tbf.plot_graphic(self.rdw, 'Month of Year', 'Watts Relative to Load',
+            tbf.plot_graphic(self.rdw, 'Month of Year', 'Watts Relative to Load',
                                   np.arange(1,13),
                                   pltslist, 'Power Output Performance',
                                   (6,4))
@@ -533,7 +524,7 @@ class SPVSIM:
                          'data': best_day_perform['Total_Load'],
                          'type': 'Line', 'xaxis': xlabels ,
                          'width': 2.0, 'color': 'r'}]
-            dp = tbf.plot_graphic(self.rdw, 'Time of Day', 'Watts', xlabels,
+            tbf.plot_graphic(self.rdw, 'Time of Day', 'Watts', xlabels,
                                   pltslist,
                                   'Best Day Power Output', (6,4))
 
@@ -550,7 +541,7 @@ class SPVSIM:
                          'data': worst_day_perform['Total_Load'],
                          'type': 'Line', 'xaxis': xlabels ,
                          'width': 2.0, 'color': 'r'}]
-            dp = tbf.plot_graphic(self.rdw, 'Time of Day', 'Watts', xlabels,
+            tbf.plot_graphic(self.rdw, 'Time of Day', 'Watts', xlabels,
                                   pltslist,
                                   'Worst Day Power Output', (6,4))
 
@@ -571,7 +562,7 @@ class SPVSIM:
                         'type': 'Line', 'color': 'r', 'xaxis': xaxis,
                         'width': 4.0, 'linestyle': 'solid' }
                          ]
-            dp = tbf.plot_graphic(self.rdw, 'Month of Year', 'Watts',
+            tbf.plot_graphic(self.rdw, 'Month of Year', 'Watts',
                                   np.arange(1,13),
                                   pltslist, 'Annual Array Performance',
                                   (6,4))
@@ -589,7 +580,7 @@ class SPVSIM:
                          'data': best_day_perform['Total_Load'],
                          'type': 'Line', 'xaxis': xlabels ,
                          'width': 2.0, 'color': 'r'}]
-            dp = tbf.plot_graphic(self.rdw, 'Time of Day', 'Watts', xlabels,
+            tbf.plot_graphic(self.rdw, 'Time of Day', 'Watts', xlabels,
                                   pltslist,
                                   'Best Day Array Output', (6,4))
 
@@ -606,13 +597,13 @@ class SPVSIM:
                          'data': worst_day_perform['Total_Load'],
                          'type': 'Line', 'xaxis': xlabels ,
                          'width': 2.0, 'color': 'r'}]
-            dp = tbf.plot_graphic(self.rdw, 'Time of Day', 'Watts', xlabels,
+            tbf.plot_graphic(self.rdw, 'Time of Day', 'Watts', xlabels,
                                   pltslist, 'Worst Day Array Output', (6,4))
 
 
 def main():
     """ Starts the GUI and enables processing all functions """
-    spv = SPVSIM()
+    SPVSIM()
 
 if __name__ == '__main__':
     main()

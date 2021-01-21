@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Oct  2 12:57:18 2018
-Modified on 02/22/2019 for version 0.1.0
-
+Modified on 02/22/2019 - for version 0.1.0
+modified on 1/8/2021 - to adapt to pvlib 0.8 requirements for cell 
+                        temperature model definition
 
 @author: Bob Hentz
 
@@ -20,16 +21,17 @@ Modified on 02/22/2019 for version 0.1.0
                or FITNESS FOR A PARTICULAR PURPOSE.
  -------------------------------------------------------------------------------
 """
-from tkinter import *
+from tkinter import GROOVE, EW, CENTER, RIGHT
 from FormBuilder import DataForm
 from Component import Component
 from FieldClasses import data_field, option_field
-from Parameters import panel_racking, albedo_types, panel_types
+from Parameters import panel_racking, albedo_types, panel_types, temp_model_xlate
 
-from pvlib import *
-from pvlib.pvsystem import *
-from pvlib.solarposition import spa_python
-from pvlib.irradiance import aoi, get_total_irradiance
+#from pvlib import *
+from pvlib.pvsystem import PVSystem
+#from pvlib.solarposition import spa_python
+#from pvlib.irradiance import aoi, get_total_irradiance
+from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS 
 
 class PVArray(Component):
     """ Methods associated with the definition, display, and operation of a
@@ -127,19 +129,9 @@ class PVArray(Component):
         mdl_rack_config =self.read_attrb('mtg_cnfg')
         pnl_name = self.parts[0].read_attrb('Name')
         pnl_parms = self.parts[0].get_parameters()
-        ##TODO Resolve problem with pnl params definition 
-        ## ----    Temporary fix ---------------
-        TEMPERATURE_MODEL_PARAMETERS = { 
-        'sapm': {'open_rack_glass_glass': {'a': -3.47, 'b': -.0594, 'deltaT': 3},
-                 'close_mount_glass_glass': {'a': -2.98, 'b': -.0471, 'deltaT': 1},
-                 'open_rack_glass_polymer': {'a': -3.56, 'b': -.0750, 'deltaT': 3},
-                 'insulated_back_glass_polymer': {'a': -2.81, 'b': -.0455, 'deltaT': 0},
-                 },
-        'pvsyst': {'freestanding': {'u_c': 29.0, 'u_v': 0},
-                   'insulated': {'u_c': 15.0, 'u_v': 0}}
-        }
-        temp_parms = TEMPERATURE_MODEL_PARAMETERS['sapm']['open_rack_glass_glass']
-        ## -----   End of Fix ------------------
+        temp_model = temp_model_xlate[mdl_rack_config][0]
+        temp_type = temp_model_xlate[mdl_rack_config][1]
+        temp_parms = TEMPERATURE_MODEL_PARAMETERS[temp_model][temp_type]
         air_temp = cur_site.get_air_temp(times, stat_win)['Air_Temp']
         wnd_spd = cur_site.get_wind_spd(times, stat_win)['Wind_Spd']
         pvsys = PVSystem(surf_tilt, surf_azm, surf_alb,
@@ -159,8 +151,6 @@ class PVArray(Component):
         airmass = loc.get_airmass(times, solar_position=solpos, model='kastenyoung1989')
 
         """ Compute ghi, dni, & dhi """
-#        csky= loc.get_clearsky(times, model='ineichen', solar_position= solpos,
-#                               dni_extra=None)
         csky= loc.get_clearsky(times, model='ineichen')
         """ Compute 'aoi' """
         aoi = pvsys.get_aoi(solpos['zenith'], solpos['azimuth'])
@@ -277,7 +267,7 @@ class ArrayForm(DataForm):
                 'lbl_tp':self.create_label(self.src.get_attrb('ary_tpnl'),
                                             row= 8, column= 0, justify= RIGHT,
                                             sticky= (EW)),
-                'spc71': self.create_space(2, row= 8, column= 1, sticky= (EW)),
+                'spc81': self.create_space(2, row= 8, column= 1, sticky= (EW)),
                 'ary_tpnl': self.create_entry(self.src.get_attrb('ary_tpnl'),
                                            row= 8, column= 2, sticky=(EW),
                                            justify= CENTER),
