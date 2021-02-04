@@ -13,6 +13,7 @@ In addition, to the standard libraries loaded with this version, the following a
 | csv support for unicode strings | unicodecsv  | 0.14.1 |  
 | http url library | urlib3 |  1.26.2 |  
 | data pickling support | cloudpickle | 1.6.0   |  
-| statistical data visualization | seaborn | 0.9.0 |
-| scientific library | scipy | 1.5.2 |  
-| datetime extensions | python-dateutil | 2.8.1  |
+| datetime extensions | python-dateutil | 2.8.1  |  
+
+
+Changed: 02/04/2021 to eliminate Seaborn and statistics libraries as a result of updates to NasaLoad functionality

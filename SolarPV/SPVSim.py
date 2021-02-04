@@ -488,7 +488,8 @@ class SPVSIM:
     def show_load_profile(self):
         """ Method to build & display the load profile graphic """
         self.load.show_load_profile(self.rdw)
-
+    
+    #TODO can all of these show methods be combined and controlled by variables?
     def show_pwr_performance(self):
         """ Create graphic of Annual Power Delivery vice Load  """
         if self.array_out is not None:
