@@ -105,3 +105,6 @@ venv.bak/
 
 # SolarPV Models
 *.spv
+
+# Project IDE Specific Files (tracking this is just cluttering the repo)
+.idea/

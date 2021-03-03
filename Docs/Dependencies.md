@@ -9,9 +9,9 @@ In addition, to the standard libraries loaded with this version, the following a
 | Data Structures | Pandas | 1.1.5  |  
 | Numerical Arrays | Numpy | 1.19.2  |  
 | Graphical Plotting | Matplotlib | 3.3.2  |  
-| http library for web requests |  requests | 3.25.1 |  
+| http library for web requests |  requests | 2.25.1 |  
 | csv support for unicode strings | unicodecsv  | 0.14.1 |  
-| http url library | urlib3 |  1.26.2 |  
+| http url library | urllib3 |  1.26.2 |  
 | data pickling support | cloudpickle | 1.6.0   |  
 | datetime extensions | python-dateutil | 2.8.1  |  
 
