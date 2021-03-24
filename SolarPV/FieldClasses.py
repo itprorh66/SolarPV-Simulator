@@ -106,9 +106,10 @@ class option_field(data_field):
         data_field.__init__(self, name, lbl_txt, fld_data)
         
     def get_list(self):
-        """ returns the current list of options filtered 
-           by current data entry """
-        return list(filter(lambda x: x.startswith(self.dat), self.olist))
+        # """ returns the current list of options filtered
+        #    by current data entry """
+        # return list(filter(lambda x: x.startswith(self.dat), self.olist))
+        return self.olist
 
     def update_list(self, ls):
         """ Updates current option list with ls """
@@ -189,8 +190,7 @@ class list_cell(ttk.Combobox):
         fargs, gargs = build_args(self.kargs)
         self.chg_cmd = fargs.pop('On_change', None)
         fargs['textvariable'] = self.val
-        fargs['values'] = list(filter(lambda x: x.startswith(self.val.get()), 
-                                               self.src.get_list()))
+        fargs['values'] = self.src.get_list()
         if not 'postcommand' in fargs:
             fargs['postcommand'] = self.on_click
         ttk.Combobox.__init__(self, self.parent, **fargs)
@@ -200,8 +200,9 @@ class list_cell(ttk.Combobox):
 
     def on_click(self):
         """ invoked when dropdown arrow is clicked """
-        self['values'] = list(filter(lambda x: x.startswith(self.val.get()), 
-                                               self.src.get_list()))
+        # self['values'] = list(filter(lambda x: x.startswith(self.val.get()),
+        #                                        self.src.get_list()))
+        pass
         
     def get_val(self):
         """ Method to get the contents of cell """
