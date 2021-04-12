@@ -91,21 +91,15 @@ class table_data_cell(ttk.Entry):
         self.grid(row=self.tblpos[0], column=self.tblpos[1], padx=2, pady=2, 
                   sticky=(tk.E, tk.W))
         self.bind('<Leave>', self.update)   # Mouse leaves cell
-        self.bind('FocusOut>', self.update) # Keyboard Focus exits
-        self.bind('Key-Tab>', self.update)
-        self.bind('Key-Return>', self.update)
+        self.bind('<FocusOut>', self.update) # Keyboard Focus exits
+        self.bind('<Key-Tab>', self.update)
+        self.bind('<Key-Return>', self.update)
 
         
     def update(self, event):
-        try:
-            new_val = self.varTyp(self.evar.get())
-        except:
-            if self.evar.get().strip() == '':
-                new_val = 0
-            else:
-                new_val = self.evar.get()
+        new_val = self.evar.get()
         if new_val != self.var:
-            self.parent.update_data(self.datpos, new_val) 
+             self.parent.update_data(self.datpos, new_val) 
         
     def delete(self, event):
         pass
