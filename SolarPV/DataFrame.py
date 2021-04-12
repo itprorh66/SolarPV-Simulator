@@ -5,7 +5,8 @@ Created on Mon Jun  4 19:17:27 2018
 Modified   Sat Dec  1 2018 (fix save/import issue)
 Modified   Tue Dec  4 2018 (fix Load Import Error Issue #11)
 Modified on 02/22/2019 for version 0.1.0
-
+Modified on 04/11/2021 to address Issues #10, 12, & 13 related to improving 
+            Site Load Definition performance and ease of use
 
 @author: Bob Hentz
 
@@ -48,7 +49,7 @@ class DataFrame:
     def delete_row(self, rwid):
         """ Delete a row from the dataframe """
         assert rwid < self.df.shape[0]
-        self.df.drop(self.df.index[rwid])
+        self.df.drop(self.df.index[rwid], inplace=True)
         
     def set_cell_value(self, pos, val):
         """ Update a DataFrame cell value pos = [row,col]  """
@@ -62,6 +63,14 @@ class DataFrame:
                 self.df.at[row, self.col_hds[col]] = self.col_typs[col](val)
             return True
         return False
+
+    def update_row_values(self, rwid, val_list):
+        """ Update the contents of the frame row  """
+        assert rwid < self.df.shape[0]
+        for colid, val in enumerate(val_list):
+            self.set_cell_value([rwid, colid], val)
+        
+
 
     def get_row_count(self):
         """ Return the row size of the DataFrame """

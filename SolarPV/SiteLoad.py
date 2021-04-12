@@ -5,6 +5,8 @@ Created on Wed May  2 13:15:35 2018
 Modified   Sat Dec  1 2018 (fix save/import issue)
 Modified   Wed Dec  5 2018 (Fix Issue 2, Handle DC Loads)
 Modified on 02/22/2019 for version 0.1.0
+Modified on 04/11/2021 to address Issues #10, 12, & 13 related to improving 
+            Site Load Definition performance and ease of use
 
 @author: Bob Hentz
 
@@ -24,8 +26,7 @@ Modified on 02/22/2019 for version 0.1.0
 import numpy as np
 import pandas as pd
 import Parameters as sp
-from DataFrame import *
-import matplotlib.pyplot as plt
+from DataFrame import DataFrame
 import guiFrames as tbf
 
 def findindex(val):
@@ -45,13 +46,16 @@ class SiteLoad(DataFrame):
         self.master = master
         DataFrame.__init__(self,   sp.load_fields, sp.load_field_types)
 
-
-    def addRow(self, typ, qty=None, uf=None, hrs=None, st=0, wts=None, src=None, mde=None):
+    def addRow(self, typ, qty=None, uf=None, hrs=None, st=0, wts=None, 
+               mde=None):
         """ Create a new entry in the load array from individual items """
-        ar = [typ, qty, uf, hrs, st, wts, src, mde]
-        print (ar)
+        ar = [typ, qty, uf, hrs, st, wts, mde]
         self.add_new_row(ar)
         
+    def getDefaultRowValues(self, load_type):
+        """ Return the dictionary of default values for this type """
+        return sp.load_types[load_type]
+    
     def setStdRowValues(self, ar):
         """ Update AR based on change of Load Type """
         if ar[0] != '':
@@ -134,7 +138,7 @@ class SiteLoad(DataFrame):
             pltlist = [{'label': 'Load', 'data': np.array(elp['Total']),
                             'type': 'Bar', 'color': 'grey', 'width': 0.4,
                             'xaxis':np.array([x for x in range(24)])}]
-            dp = tbf.plot_graphic(window, 'Hour of Day', 'Watts',
+            tbf.plot_graphic(window, 'Hour of Day', 'Watts',
                                   np.array([x for x in range(24)]),
                         pltlist,'Hourly Electrical Use Profile', (6,4),
                         text_inserts= [pl,tdl,avhl])
@@ -173,6 +177,7 @@ def main():
     sl.add_new_row(['Well Pump DC, 1 HP', 1, 0.35, 12, 8, 500.0, 'DC'])
     sl.add_new_row(['Phone Charger', 10, 0.45, 12, 6, 2.0, 'DC'])
     elp = sl.get_load_profile()
+    print(elp)
     print(sl.get_dataframe())
 
 

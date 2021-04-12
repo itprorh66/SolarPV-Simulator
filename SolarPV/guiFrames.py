@@ -3,6 +3,9 @@
 """
 Created on Tue Jul 10 11:07:02 2018
 Modified on 02/22/2019 for version 0.1.0
+Modified on 04/11/2021 to address Issues #10, 12, & 13 related to improving 
+            Site Load Definition performance and ease of use
+
 
 @author: Bob Hentz
 
@@ -20,16 +23,13 @@ Modified on 02/22/2019 for version 0.1.0
  -------------------------------------------------------------------------------
 """
 
-from tkinter import *
-import matplotlib
-#TODO Investigat whether this can come out or is it truly necessary
-#matplotlib.use('TkAgg', warn=False, force=True)
+
+import tkinter as tk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-
-from tkinter.messagebox import *
+from tkinter.messagebox import askyesno
 import tkinter.ttk as ttk
-from tkinter.filedialog import *
+from tkinter.filedialog import askopenfilename 
 
 
 """  Helper Methods & Functions """
@@ -42,7 +42,7 @@ def ask_question(title, mssg, **kargs):
 
 def show_warning(title, mssg):
     """ Implements a pop-up Window that Notifies the User of an error/warning """
-    showwarning(title, mssg)
+    tk.showwarning(title, mssg)
 
 def cleanse_data(data):
     """ Converts a null data display to None Value """
@@ -61,9 +61,9 @@ def popup_notification(parent, message, command, *command_args, color= '#ffff80'
     """ Create a popup notification to alert user to long running process
         Execute the Process, clear the alert screen and return the process results """
     rslts = None
-    tplvl = Toplevel()
+    tplvl = tk.Toplevel()
     tplvl.lift()
-    lbl = Label(tplvl, text = message, padx= 5, pady=5, bd= 5, bg= color)
+    lbl = tk.Label(tplvl, text = message, padx= 5, pady=5, bd= 5, bg= color)
     lbl.pack(fill = "both", expand=True)
     parent.update_idletasks()
     if command_args is None:
@@ -84,7 +84,7 @@ def build_menubar(parent, menu_itms):
     def add_sub_menu(mnu, cmd_dict):
         for ky in cmd_dict.keys():
             if len(cmd_dict[ky]) > 0:
-                mi = Menu(mnu, tearoff= 0)
+                mi = tk.Menu(mnu, tearoff= 0)
                 mnu.add_cascade(label=ky, menu=mi)
                 for itm in cmd_dict[ky]:
                     if type(itm) == tuple:
@@ -92,7 +92,7 @@ def build_menubar(parent, menu_itms):
                     else:
                         add_sub_menu(mi, itm)
             
-    mbar = Menu(parent)
+    mbar = tk.Menu(parent)
     add_sub_menu(mbar, menu_itms)
     parent.config(menu=mbar)
     return mbar
@@ -169,7 +169,7 @@ class plot_graphic(ttk.Frame):
         ttk.Frame.__init__(self, self.parent)
         self.grid(row= 0, column= 0, sticky = "NWES", padx=5, pady=5)
         for i in range(len(text_inserts)):
-            tx = ttk.Label(self, text=text_inserts[i]).grid(row = i+1, column= 0, sticky = 'EW')
+            ttk.Label(self, text=text_inserts[i]).grid(row = i+1, column= 0, sticky = 'EW')
         self.fig = make_figure(xlabel, ylabel, xaxis, yaxislist, pltlbl, pltsize, **kargs)
         self.canvas = FigureCanvasTkAgg(self.fig, master=self)
         self.canvas.draw()
@@ -194,7 +194,7 @@ class list_cell(ttk.Combobox):
         if location is not None:
             self.loc = location
         self.wdth = None
-        self.val = StringVar()
+        self.val = tk.StringVar()
         self.val.set(self.src.read_data())
         self.validate = None
         self.chg_cmd = On_change
@@ -207,8 +207,8 @@ class list_cell(ttk.Combobox):
                            textvariable=self.val,
                            values= list(filter(lambda x: x.startswith(self.val.get()), 
                                                self.opts)),
-                           exportselection = 0, justify= LEFT)
-        self.grid(row= self.loc[0], column= self.loc[1], sticky=(E))
+                           exportselection = 0, justify= tk.LEFT)
+        self.grid(row= self.loc[0], column= self.loc[1], sticky=(tk.E))
         self.bind('<FocusOut>', self.is_okay)
         self.bind('<KeyRelease>', self.on_chg)
       
@@ -247,7 +247,7 @@ class data_cell(ttk.Entry):
         self.loc = [0,1]
         if location is not None:
             self.loc = location
-        self.val = StringVar()
+        self.val = tk.StringVar()
         self.val.set(self.src.read_data())
         self.validate = None
         self.chg_cmd = On_change
@@ -257,11 +257,11 @@ class data_cell(ttk.Entry):
     def show_frame(self):
         """ Display The Frame """       
         ttk.Entry.__init__(self, self.parent, width=self.min_width, 
-                           textvariable=self.val, justify= CENTER 
+                           textvariable=self.val, justify= tk.CENTER 
                            #validate= self.validate, 
                            #validatecommand= self.validate_cmd
                            )
-        self.grid(row= self.loc[0], column= self.loc[1], sticky=(EW))
+        self.grid(row= self.loc[0], column= self.loc[1], sticky=(tk.EW))
         self.bind('<FocusOut>', self.is_okay)
         self.bind('<KeyRelease>', self.on_chg)
       
@@ -290,7 +290,7 @@ class data_cell(ttk.Entry):
         return rslt
         
 
-class note_cell(Text):
+class note_cell(tk.Text):
     """ Creates an Entry Field Widget for input & update of Long string data  """
     def __init__(self, parent_frame, data_src, size= None, location= None): 
         self.parent = parent_frame
@@ -301,17 +301,17 @@ class note_cell(Text):
         self.size = [1, 50]
         if size != None:
             self.size = size
-        Text.__init__(self, self.parent, height= self.size[0], width= self.size[1],
-                      wrap= WORD, padx = 5, pady = 5)
-        self.grid(row= self.loc[0], column= self.loc[1], sticky=(N, S, W, E))
+        tk.Text.__init__(self, self.parent, height= self.size[0], width= self.size[1],
+                      wrap= tk.WORD, padx = 5, pady = 5)
+        self.grid(row= self.loc[0], column= self.loc[1], sticky=(tk.N, tk.S, tk.W, tk.E))
         self.insert('1.0', self.src.read_data())
         self.bind('<FocusOut>', self.on_chg)
 
     def is_dirty(self):
-        return self.src.read_data() != self.get('1.0', END+'-1c')
+        return self.src.read_data() != self.get('1.0', tk.END+'-1c')
 
     def get_val(self):
-        return self.get('1.0', END+'-1c')
+        return self.get('1.0', tk.END+'-1c')
 
     def on_chg(self, event):
         self.src.write_data(self.get_val())
@@ -343,32 +343,41 @@ class entry_form_frame(ttk.Frame):
        
    def make_frame(self):
         ttk.Frame.__init__(self, self.parent)
-        self.grid(row = self.loc[0], column= self.loc[1], sticky= (N, W, E, S), columnspan=self.colspan)
+        self.grid(row = self.loc[0], column= self.loc[1], 
+                  sticky= (tk.N, tk.W, tk.E, tk.S), columnspan=self.colspan)
         if self.frm == "Data Entry":
-            ttk.Label(self, padding='2 2 2 2', text=self.src.get_label()).grid(column=0, row=0, sticky=(W, E))
+            ttk.Label(self, padding='2 2 2 2', 
+                      text=self.src.get_label()).grid(column=0, row=0, 
+                                                      sticky=(tk.W, tk.E))
             self._ntry = data_cell(self, self.src, min_lngth=self.size, location= [0, 1],
                       validate_command= self.validate_cmd, On_change= self.chg_cmd) 
         elif self.frm == "List Entry":
-            ttk.Label(self, padding='2 2 2 2', text=self.src.get_label()).grid(column=0, row=0, sticky=(W, E))
-            self._ntry = list_cell(self, self.src, min_lngth=self.size, location= [0, 1],
+            ttk.Label(self, padding='2 2 2 2', 
+                      text=self.src.get_label()).grid(column=0, row=0, 
+                                                      sticky=(tk.W, tk.E))
+            self._ntry = list_cell(self, self.src, min_lngth=self.size, 
+                                   location= [0, 1],
                       validate_command= self.validate_cmd, On_change= self.chg_cmd)
         else:
-            ttk.Label(self, padding='2 2 2 2', text=self.src.get_label()).grid(column=0, row=0, sticky=(W, E))
-            self._ntry = note_cell(self, self.src, size=self.size, location= [1, 0])
+            ttk.Label(self, padding='2 2 2 2', 
+                      text=self.src.get_label()).grid(column=0, row=0, 
+                                                      sticky=(tk.W, tk.E))
+            self._ntry = note_cell(self, self.src, size=self.size, 
+                                   location= [1, 0])
                   
         
     
 """ Master Frame Classes Used to Implement GUI Functions  """
-class status_window(LabelFrame):
+class status_window(tk.LabelFrame):
     """ Implements a Status Window and Manages display of status messages """
     def __init__(self, parent, title, loc= None, spn = None ):
         self.parent = parent
         if loc is None:
             loc = [0,0]
-        LabelFrame.__init__(self, parent, text= title) 
+        tk.LabelFrame.__init__(self, parent, text= title) 
         self.grid(row= loc[0], column= loc[1], columnspan= spn, sticky = 'EW')
         self.configure(borderwidth= 5, width= 500, height= 50, 
-                       relief= GROOVE, background= '#ccffb3')
+                       relief= tk.GROOVE, background= '#ccffb3')
         self.lbl = None
         
     def show_message(self, message, style= None):
@@ -387,7 +396,7 @@ class status_window(LabelFrame):
            s = 'Notice: ' + s
         if self.lbl is not None:
             self.lbl.destroy()
-        self.lbl = Label(self, text= s, font= fs, padx= 2, pady= 2, 
+        self.lbl = tk.Label(self, text= s, font= fs, padx= 2, pady= 2, 
                             background= '#ccffb3', foreground= fg)
         self.lbl.grid(row= 0, column=0)
         self.parent.update_idletasks()
@@ -406,8 +415,9 @@ class switchboard(ttk.LabelFrame):
             self.menuTitle = menuTitle
         self.mstrKey = None
         ttk.LabelFrame.__init__(self, self.parent, text=self.menuTitle, borderwidth= 5,
-                                width= 400, height = 500, padding= 5, relief= GROOVE)
-        self.grid(row = self.loc[0], column = self.loc[1], sticky = ( N, S, W, E))
+                                width= 400, height = 500, padding= 5, relief= tk.GROOVE)
+        self.grid(row = self.loc[0], column = self.loc[1], 
+                  sticky = ( tk.N, tk.S, tk.W, tk.E))
         self.grid_propagate(0)
         self.define_menu()
         self.display_actions()
@@ -428,12 +438,12 @@ class switchboard(ttk.LabelFrame):
         for act in self.actions:
 #            menu_action(act[0], act[1], [cur_row, cur_col], parent = self)
             ttk.Label(self, text = act[0], padding= '2 5 2 2').grid(
-                    row = cur_row, column= 1, sticky= (E, W))
+                    row = cur_row, column= 1, sticky= (tk.E, tk.W))
             ttk.Label(self, text = " ", padding= '2 5 2 2').grid(
-                    row = cur_row, column= 2, sticky= (E, W))
+                    row = cur_row, column= 2, sticky= (tk.E, tk.W))
             ttk.Button(self, text= act[1], command = act[2], 
                        padding= '2 5 2 2').grid(row = cur_row, 
-                                         column =3, sticky= (E, W))            
+                                         column =3, sticky= (tk.E, tk.W))            
             cur_row += 1
             
 

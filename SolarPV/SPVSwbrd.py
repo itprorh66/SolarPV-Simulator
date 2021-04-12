@@ -4,6 +4,7 @@
 Created on Fri Jun  8 14:42:27 2018
 Modified on 11/27/2018 to Clean up Comments
 Modified on 02/22/2019 for version 0.1.0
+Modified 0n 04/11/2021 to implement Record delete function see issue #13
 @author: Bob Hentz
 -------------------------------------------------------------------------------
   Name:        SPVSwbDisplay.py
@@ -57,7 +58,7 @@ class spvSwitchboard(tbf.switchboard):
     def dsplyLoad(self):
         """ Display Site Electric Load Definition Input Form """
         self.define_toplevel( 'Electrical Load')
-        self.frm = sld.Table(self.src.load, self.dsply)
+        self.frm = sld.Table(self.src.load, self.dsply, "Del")
            
     def dsplyBats(self):
         """ Display Battery Description Input Form """
