@@ -147,6 +147,7 @@ class Table(ttk.Frame):
 
     def build_row(self, val_list, data_row, tbl_row, TBLHDR=False):
         # lastrow = False
+        colpos = 0
         if len(val_list) > 0:
             for itm_no, itm_name, in enumerate(val_list):
                 colpos = 1 + itm_no*2
@@ -158,20 +159,21 @@ class Table(ttk.Frame):
                 else:
                     self.define_data_cell([tbl_row, colpos],  
                                           [data_row, itm_no], itm_name)
-                ttk.Separator(self, orient=tk.VERTICAL).grid(row=tbl_row+1, 
-                     column = len(val_list)*2, sticky=(tk.N, tk.S))     
+            ttk.Separator(self, orient=tk.VERTICAL).grid(row=tbl_row+1,
+                 column = colpos+1, sticky=(tk.N, tk.S))
         
-        if self.add_Del_col:
-            # Add the Delete Row column entries if required
-            if TBLHDR:
-                header_cell(self, colpos, self.add_Del_col)
-                
-            else:
-                table_button_cell(self, [tbl_row, colpos],  
-                                   [data_row, itm_no], 
-                                    'X', self.delete_row)   
-            ttk.Separator(self, orient=tk.VERTICAL).grid(row=tbl_row+1, 
-                 column = len(val_list)*2, sticky=(tk.N, tk.S))                         
+            if self.add_Del_col:
+                # Add the Delete Row column entries if required
+                colpos+=2
+                if TBLHDR:
+                    header_cell(self, colpos, self.add_Del_col)
+
+                else:
+                    table_button_cell(self, [tbl_row, colpos],
+                                       [data_row, itm_no],
+                                        'X', self.delete_row)
+                ttk.Separator(self, orient=tk.VERTICAL).grid(row=tbl_row+1,
+                     column = colpos+1, sticky=(tk.N, tk.S))
 
     def define_data_cell(self, tblpos, datpos, var):
         if datpos[1] == 0:
