@@ -75,6 +75,20 @@ class PVPanel(Component):
         """ Triggered by a mfg field validation event
             Updates Model list based on  mfg selection """
         val = self.form.wdg_dict['m_mfg'].get_val()
+
+        "clear the model attributes if the latest manufacturer has changed from previous"
+        if self.args['m_mfg'].read_data() != val:
+            self.set_attribute('m_mdl', None)
+            for ky in self.args.keys():
+                if ky == 'm_mdl' or ky == 'Name':
+                    self.set_attribute(ky, '')
+                    self.form.wdg_dict[ky].set_val()
+                elif ky == 'm_mfg':
+                    pass
+                else:
+                    self.set_attribute(ky, 0)
+                    self.form.wdg_dict[ky].set_val()
+
         self.set_attribute('m_mfg', val)
         osrc = self.args['m_mfg'].get_option_source()
         nol =  sorted(list(set(osrc['Manufacturer'])))
@@ -143,7 +157,7 @@ class PanelForm(DataForm):
                                            row= 2, column= 5, sticky=(EW),
                                            name= self.src.get_attrb_name('m_mfg'),
                                            width= 45, justify= CENTER, columnspan= 5,
-                                           validate= 'focusout',
+                                           validate= 'focusin',
                                            validatecommand= self.src.validate_mfg_setting),
                 'lbl_mdl': self.create_label(self.src.get_attrb('m_mdl'),
                                             row= 3, column= 0, justify= RIGHT,
@@ -152,7 +166,7 @@ class PanelForm(DataForm):
                 'm_mdl': self.create_dropdown(self.src.get_attrb('m_mdl'),
                                            row= 3, column= 5, sticky=(EW),
                                            justify= CENTER, width= 35, columnspan= 5,
-                                           validate= 'focusout',
+                                           validate= 'focusin',
                                            validatecommand= self.src.validate_mdl_setting),
                 'lbl_desc': self.create_label(self.src.get_attrb('Name'),
                                             row= 4, column= 0, justify= RIGHT,
