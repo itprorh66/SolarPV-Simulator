@@ -76,8 +76,23 @@ class PVInverter(Component):
         """ Triggered by a mfg field validation event
             Updates Model list based on  mfg selection """
         val = self.form.wdg_dict['i_mfg'].get_val()
+
+        "clear the model attributes if the latest manufacturer has changed from previous"
+        if self.args['i_mfg'].read_data() != val:
+            self.set_attribute('i_mdl', None)
+            for ky in self.args.keys():
+                if ky == 'i_mdl' or ky == 'Name':
+                    self.set_attribute(ky, '')
+                    self.form.wdg_dict[ky].set_val()
+                elif ky == 'i_mfg':
+                    pass
+                else:
+                    self.set_attribute(ky, 0)
+                    self.form.wdg_dict[ky].set_val()
+
+        self.set_attribute('i_mfg', val)
         osrc = self.args['i_mfg'].get_option_source()
-        nol =  sorted(list(set(osrc['Manufacturer'])))
+        nol = sorted(list(set(osrc['Manufacturer'])))
         lst = list(filter(lambda x: x.startswith(val), nol))
 
         if val != "":
@@ -140,7 +155,7 @@ class InverterForm(DataForm):
                 'i_mfg': self.create_dropdown(self.src.get_attrb('i_mfg'),
                                            row= 2, column= 5, sticky=(EW),
                                            width= 45, justify= CENTER, columnspan= 5,
-                                           validate= 'focusout',
+                                           validate= 'focusin',
                                            validatecommand= self.src.validate_mfg_setting),
                 'lbl_mdl': self.create_label(self.src.get_attrb('i_mdl'),
                                             row= 3, column= 0, justify= RIGHT,
@@ -149,7 +164,7 @@ class InverterForm(DataForm):
                 'i_mdl': self.create_dropdown(self.src.get_attrb('i_mdl'),
                                            row= 3, column= 5, sticky=(EW),
                                            justify= CENTER, width= 35, columnspan= 5,
-                                           validate= 'focusout',
+                                           validate= 'focusin',
                                            validatecommand= self.src.validate_mdl_setting),
                 'lbl_desc': self.create_label(self.src.get_attrb('Name'),
                                             row= 4, column= 0, justify= RIGHT,

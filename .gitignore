@@ -108,3 +108,5 @@ venv.bak/
 
 # Project IDE Specific Files (tracking this is just cluttering the repo)
 .idea/
+
+SolarPV/Reports/
